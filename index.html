@@ -1,0 +1,3597 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jelly Splat Phonics</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#241438">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html { color-scheme: light dark; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --paper:    #FBF3E4;
+    --paper-2:  #F4E9D5;
+    --paper-3:  #EADDC4;
+    --ink:      #1F2430;
+    --ink-soft: #6A6355;
+    --edge:     #1F2430;
+    --hair:     rgba(31,36,48,.14);
+    --shade:    rgba(31,36,48,.10);
+    --c1: #E8455F;  --c2: #45A96C;  --c3: #F5A524;
+    --c4: #4A7DD6;  --c5: #8A5CD1;  --c6: #EF6F3C;
+    --good: #45A96C;
+    --oops: #EF6F3C;
+    --ui: "Baloo 2", "Trebuchet MS", sans-serif;
+    --letter: "Andika", "Comic Sans MS", "Trebuchet MS", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper:    #171B26;
+      --paper-2:  #1F2431;
+      --paper-3:  #29303F;
+      --ink:      #F6EEDF;
+      --ink-soft: #A29A8B;
+      --edge:     #0D1017;
+      --hair:     rgba(246,238,223,.16);
+      --shade:    rgba(0,0,0,.34);
+      --c1: #FF5C74;  --c2: #4FC07C;  --c3: #FFB93D;
+      --c4: #5E92E8;  --c5: #A275E5;  --c6: #FF8351;
+      --good: #4FC07C;
+      --oops: #FF8351;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:    #171B26;
+    --paper-2:  #1F2431;
+    --paper-3:  #29303F;
+    --ink:      #F6EEDF;
+    --ink-soft: #A29A8B;
+    --edge:     #0D1017;
+    --hair:     rgba(246,238,223,.16);
+    --shade:    rgba(0,0,0,.34);
+    --c1: #FF5C74;  --c2: #4FC07C;  --c3: #FFB93D;
+    --c4: #5E92E8;  --c5: #A275E5;  --c6: #FF8351;
+    --good: #4FC07C;
+    --oops: #FF8351;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 18% 12%, var(--shade) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 62% 47%, var(--shade) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 86% 78%, var(--shade) 0 1px, transparent 1.6px);
+    background-size: 26px 26px, 37px 37px, 31px 31px;
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  input, textarea { font: inherit; }
+  :focus-visible { outline: 3px solid var(--c4); outline-offset: 2px; border-radius: 4px; }
+  [hidden] { display: none !important; }
+
+  #app { height: 100%; max-width: 580px; margin: 0 auto; display: flex; flex-direction: column; min-height: 0; }
+
+  .topbar { display: flex; align-items: center; gap: 8px; padding: 10px 18px 6px; }
+  .wordmark { margin-right: auto; display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 19px; letter-spacing: -.01em; }
+  .wordmark svg { width: 26px; height: 26px; display: block; }
+
+  .tbtn {
+    padding: 6px 13px; border-radius: 999px;
+    border: 2px solid var(--edge);
+    background: var(--paper-2);
+    font-weight: 600; font-size: 13px;
+    box-shadow: 2px 2px 0 var(--edge);
+  }
+  .tbtn:active { transform: translate(2px, 2px); box-shadow: none; }
+  .tbtn.on { background: var(--c3); color: #1F2430; }
+
+  .screen { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 18px 30px; }
+
+  h2.sect {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--ink-soft); font-weight: 700; margin: 24px 0 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2.sect::after { content: ""; flex: 1; height: 2px; background: var(--hair); }
+  h2.sect:first-child { margin-top: 12px; }
+
+  /* ---------- home ---------- */
+  .hero {
+    border: 2.5px solid var(--edge);
+    border-radius: 22px;
+    background: var(--paper-2);
+    box-shadow: 5px 5px 0 var(--edge);
+    padding: 16px 16px 18px;
+    display: grid; gap: 14px;
+  }
+  .cast { display: flex; justify-content: center; align-items: flex-end; gap: 2px; height: 96px; }
+  .cast svg { width: 84px; height: 84px; }
+  .cast svg:nth-child(2) { width: 96px; height: 96px; }
+  .hero h1 { margin: 0; font-size: 21px; font-weight: 800; text-align: center; text-wrap: balance; line-height: 1.15; }
+  .hero p { margin: 0; text-align: center; font-size: 14px; color: var(--ink-soft); font-weight: 500; }
+  .play-btn {
+    width: 100%; padding: 15px; border-radius: 16px;
+    background: var(--c3); color: #1F2430;
+    border: 2.5px solid var(--edge);
+    box-shadow: 0 5px 0 var(--edge);
+    font-size: 21px; font-weight: 800;
+    transition: transform .07s, box-shadow .07s;
+  }
+  .play-btn:active { transform: translateY(5px); box-shadow: 0 0 0 var(--edge); }
+  .play-btn[disabled] { opacity: .45; box-shadow: 0 5px 0 var(--edge); }
+
+  .tickets { display: flex; gap: 8px; margin-top: 14px; }
+  .ticket {
+    flex: 1; padding: 9px 10px; border-radius: 12px;
+    border: 2px dashed var(--hair);
+    display: grid; gap: 0;
+  }
+  .ticket b { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .ticket span { font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-soft); font-weight: 600; }
+
+  .setlist { display: grid; gap: 9px; }
+  .setrow {
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+    padding: 11px 12px; border-radius: 14px;
+    background: var(--paper-2);
+    border: 2px solid var(--hair);
+  }
+  .setrow.sel { border-color: var(--edge); box-shadow: 3px 3px 0 var(--edge); background: var(--paper); }
+  .setrow .spine { width: 7px; align-self: stretch; min-height: 34px; border-radius: 4px; border: 1.5px solid var(--edge); }
+  .setrow .meta { flex: 1; min-width: 0; display: grid; gap: 1px; }
+  .setrow .meta b { font-weight: 700; font-size: 15px; line-height: 1.2; }
+  .setrow .meta small { color: var(--ink-soft); font-size: 12px; font-weight: 500; }
+  .pill {
+    flex: none; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--c3); color: #1F2430; border: 1.5px solid var(--edge);
+    font-variant-numeric: tabular-nums;
+  }
+  .pill.rest { background: transparent; color: var(--ink-soft); border-color: var(--hair); }
+  .mic-pill { flex: none; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+
+  /* ---------- stage / game ---------- */
+  .gamewrap { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
+  .pips { display: flex; gap: 4px; }
+  .pip { height: 6px; flex: 1; border-radius: 3px; background: var(--hair); }
+  .pip.done { background: var(--c2); }
+  .pip.now { background: var(--c3); }
+
+  .prompt {
+    border: 2.5px solid var(--edge); border-radius: 18px;
+    background: var(--paper-2);
+    box-shadow: 4px 4px 0 var(--edge);
+    padding: 12px; display: grid; gap: 10px; justify-items: center;
+  }
+  .ask { font-size: 15px; font-weight: 600; text-align: center; text-wrap: balance; }
+  .ask em { font-style: normal; font-family: var(--letter); font-weight: 700; }
+  .mouthbox {
+    width: 100%; max-width: 250px; aspect-ratio: 5/3;
+    border: 2px solid var(--edge); border-radius: 14px;
+    background: var(--paper-3);
+    overflow: hidden; position: relative;
+  }
+  .mouthbox svg, .mouthbox video { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .mouthbox .tag {
+    position: absolute; left: 7px; top: 7px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    background: var(--paper); color: var(--ink-soft);
+    border: 1.5px solid var(--edge); border-radius: 999px; padding: 2px 7px;
+  }
+  .hearbtn {
+    padding: 9px 20px; border-radius: 999px;
+    border: 2px solid var(--edge); background: var(--paper);
+    font-weight: 700; font-size: 15px; box-shadow: 2px 2px 0 var(--edge);
+  }
+  .hearbtn:active { transform: translate(2px,2px); box-shadow: none; }
+
+  .stage {
+    flex: 1; min-height: 210px; position: relative;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+    align-content: center; justify-items: center;
+    border-radius: 20px;
+    background: radial-gradient(ellipse 90% 70% at 50% 60%, var(--paper-2) 0%, transparent 72%);
+  }
+  .stage.three > :last-child:nth-child(odd) { grid-column: span 2; }
+  .monster {
+    width: 100%; max-width: 168px; aspect-ratio: 1/1;
+    display: block; position: relative; padding: 0;
+    transition: transform .1s;
+  }
+  .monster svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .monster:active { transform: scale(.95); }
+  .m-body { transform-origin: center; animation: bob 3.4s ease-in-out infinite; }
+  .b1 { animation-duration: 3.1s; }
+  .b2 { animation-duration: 4.2s; animation-delay: -1.1s; }
+  .b3 { animation-duration: 3.7s; animation-delay: -2.3s; }
+  .b4 { animation-duration: 4.6s; animation-delay: -.6s; }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-1.2deg) scale(1, 1); }
+    50%      { transform: translateY(-5px) rotate(1.4deg) scale(.985, 1.015); }
+  }
+  .monster.pop .m-body {
+    animation: none;
+    transform: translateY(26px) scale(1.5, .16);
+    opacity: 0;
+    transition: transform .3s cubic-bezier(.35,1.6,.5,1), opacity .3s ease .06s;
+  }
+  .monster.pop { pointer-events: none; }
+  .monster.shake .m-body { animation: shake .45s ease; }
+  @keyframes shake {
+    0%,100% { transform: rotate(0); }
+    22% { transform: rotate(-8deg) scale(1.04,.96); }
+    55% { transform: rotate(7deg) scale(.97,1.03); }
+    80% { transform: rotate(-3deg); }
+  }
+  .monster.gone { opacity: .22; pointer-events: none; transition: opacity .3s; }
+  .goo {
+    position: fixed; width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid var(--edge); pointer-events: none; z-index: 60;
+    animation: fling .6s cubic-bezier(.2,.6,.4,1) forwards;
+  }
+  @keyframes fling { to { transform: translate(var(--dx), var(--dy)) scale(.15) rotate(140deg); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .m-body, .monster.pop .m-body, .goo { animation: none !important; transition: opacity .2s !important; }
+  }
+
+  .slots { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; }
+  .slot {
+    min-width: 54px; height: 60px; border-radius: 12px;
+    border: 2.5px dashed var(--hair);
+    display: grid; place-items: center; padding: 0 8px;
+    font-family: var(--letter); font-weight: 700; font-size: 26px;
+    color: var(--hair);
+  }
+  .slot.filled { border-style: solid; border-color: var(--edge); background: var(--c2); color: #1F2430; }
+
+  /* ---------- review ---------- */
+  .revrow {
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    padding: 10px 11px; border-radius: 14px;
+    background: var(--paper-2); border: 2px solid var(--hair);
+  }
+  .revrow .w { font-family: var(--letter); font-weight: 700; font-size: 20px; flex: 1; min-width: 80px; }
+  .revrow .sc { font-size: 11.5px; color: var(--ink-soft); font-weight: 600; }
+  .grades { display: flex; gap: 6px; width: 100%; }
+  .grade {
+    flex: 1; padding: 8px 4px; border-radius: 10px;
+    border: 2px solid var(--hair); background: var(--paper);
+    font-size: 13px; font-weight: 600; color: var(--ink-soft);
+  }
+  .grade.on { color: #1F2430; border-color: var(--edge); }
+  .grade.g0.on { background: var(--c6); }
+  .grade.g1.on { background: var(--c3); }
+  .grade.g2.on { background: var(--c2); }
+  .iconbtn {
+    flex: none; width: 36px; height: 36px; border-radius: 10px;
+    border: 2px solid var(--edge); background: var(--paper);
+    display: grid; place-items: center; font-size: 14px;
+  }
+
+  /* ---------- grown-ups ---------- */
+  .card {
+    background: var(--paper-2); border: 2px solid var(--hair);
+    border-radius: 16px; padding: 14px; display: grid; gap: 11px;
+  }
+  .flab { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; display: grid; gap: 5px; }
+  input[type="text"], textarea {
+    width: 100%; background: var(--paper); color: var(--ink);
+    border: 2px solid var(--hair); border-radius: 11px; padding: 10px 11px;
+    font-family: var(--letter); font-size: 16px;
+  }
+  textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .btn {
+    padding: 11px 15px; border-radius: 12px;
+    border: 2px solid var(--edge); background: var(--c4); color: #fff;
+    font-weight: 700; font-size: 14.5px; box-shadow: 2px 2px 0 var(--edge);
+  }
+  .btn:active { transform: translate(2px,2px); box-shadow: none; }
+  .btn.ghost { background: var(--paper); color: var(--ink); }
+  .btn.go { background: var(--c2); color: #1F2430; }
+  .btn.danger { background: var(--paper); color: var(--oops); border-color: var(--oops); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .note { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); font-weight: 500; }
+  .note b { color: var(--ink); font-weight: 700; }
+  .note a { color: inherit; }
+
+  .wordgrid { display: grid; gap: 6px; }
+  .wtile {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 8px 7px 11px; border-radius: 11px;
+    background: var(--paper-2); border: 2px solid var(--hair);
+  }
+  .wtile .lab { flex: 1; font-family: var(--letter); font-size: 16px; font-weight: 700; }
+  .wtile .lab small { font-family: var(--ui); font-weight: 500; font-size: 11.5px; color: var(--ink-soft); }
+  .mini {
+    font-size: 11px; font-weight: 700; padding: 5px 8px; border-radius: 8px;
+    border: 2px solid var(--hair); background: var(--paper);
+  }
+  .mini.has { background: var(--c2); color: #1F2430; border-color: var(--edge); }
+  .mini.lib { background: var(--paper-3); }
+
+  /* ---------- recorder ---------- */
+  .recstage { display: grid; gap: 14px; justify-items: center; text-align: center; }
+  .recword { font-family: var(--letter); font-weight: 700; font-size: 44px; line-height: 1.1; }
+  .recword small { display: block; font-family: var(--ui); font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+  .recbtn {
+    width: 116px; height: 116px; border-radius: 50%;
+    border: 3px solid var(--edge); background: var(--c1); color: #fff;
+    font-size: 15px; font-weight: 800; box-shadow: 0 5px 0 var(--edge);
+  }
+  .recbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--edge); }
+  .recbtn.live { background: var(--oops); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.06); } }
+  .recprog { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .camwrap {
+    position: relative; width: 100%; max-width: 300px; aspect-ratio: 1/1;
+    border: 2.5px solid var(--edge); border-radius: 20px; overflow: hidden;
+    background: var(--paper-3);
+  }
+  .camwrap video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .camword {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 10px 12px 12px;
+    background: linear-gradient(transparent, rgba(0,0,0,.72));
+    color: #FFF8EC; font-family: var(--letter); font-weight: 700; font-size: 34px;
+    text-align: center; line-height: 1.1;
+  }
+  .camword small { display: block; font-family: var(--ui); font-size: 12px; font-weight: 600; opacity: .85; }
+  .camdot {
+    position: absolute; top: 10px; right: 10px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #E8455F; border: 2px solid #FFF8EC;
+    animation: pulse .9s ease-in-out infinite;
+  }
+  .countin {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 72px; font-weight: 800; color: #FFF8EC;
+    text-shadow: 0 2px 12px rgba(0,0,0,.6);
+    background: rgba(0,0,0,.25);
+  }
+
+  /* focus batch on the home hero */
+  .eyebrow {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--ink-soft); text-align: center;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .chip {
+    font-family: var(--letter); font-weight: 700; font-size: 15px;
+    padding: 5px 10px; border-radius: 9px;
+    border: 2px solid var(--hair); background: var(--paper);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--hair); display: block; }
+  .chip.b1 i, .chip.b2 i { background: var(--c3); }
+  .chip.b3 i, .chip.b4 i, .chip.b5 i { background: var(--c2); }
+  .chip.done { border-color: var(--c2); }
+  .stretch-btn {
+    width: 100%; padding: 11px; border-radius: 14px;
+    border: 2px dashed var(--hair); background: transparent;
+    font-weight: 700; font-size: 14.5px; color: var(--ink-soft);
+  }
+  .stretch-btn:not([disabled]) {
+    border: 2px solid var(--edge); border-style: solid;
+    background: var(--c5); color: #fff; box-shadow: 0 4px 0 var(--edge);
+  }
+  .stretch-btn:not([disabled]):active { transform: translateY(4px); box-shadow: none; }
+  .half-btn {
+    flex: 1; min-width: 130px; padding: 10px 6px; border-radius: 13px;
+    border: 2px solid var(--edge); background: var(--paper);
+    font-weight: 700; font-size: 13.5px; box-shadow: 2px 2px 0 var(--edge);
+  }
+  .half-btn:active { transform: translate(2px,2px); box-shadow: none; }
+
+  /* tracing */
+  .tracebox {
+    position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1;
+    border: 2.5px solid var(--edge); border-radius: 20px;
+    background: var(--paper); box-shadow: 4px 4px 0 var(--edge);
+    overflow: hidden; touch-action: none;
+  }
+  .tracebox canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .bigstars { font-size: 30px; letter-spacing: 4px; min-height: 38px; line-height: 1.2; }
+  .bigstars .dim { opacity: .2; }
+
+  /* book pages */
+  .pagewrap {
+    width: 100%; border: 2.5px solid var(--edge); border-radius: 18px;
+    background: var(--paper-3); box-shadow: 4px 4px 0 var(--edge);
+    overflow: hidden; display: grid; place-items: center; min-height: 160px;
+  }
+  .pagewrap img { width: 100%; max-height: 46vh; object-fit: contain; display: block; }
+  .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .thumbs img {
+    width: 100%; aspect-ratio: 3/4; object-fit: cover;
+    border-radius: 9px; border: 2px solid var(--hair);
+  }
+
+  /* stickers */
+  .album { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .album .sticker {
+    aspect-ratio: 1/1; border-radius: 14px; padding: 4px;
+    border: 2px dashed var(--hair); background: var(--paper-2);
+  }
+  .album .sticker svg { width: 100%; height: 100%; display: block; }
+  .album .sticker:active { transform: scale(.92); }
+
+  /* progress report */
+  .bar { height: 9px; border-radius: 5px; background: var(--hair); overflow: hidden; display: flex; }
+  .bar i { display: block; height: 100%; }
+  .bar .known { background: var(--c2); }
+  .bar .going { background: var(--c3); }
+  .repline { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; }
+  .repline .nm { flex: 1; min-width: 0; }
+  .repline .bar { flex: 2; }
+  .repline .n { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-size: 12px; }
+
+  /* sentences */
+  .sentence {
+    font-family: var(--letter); font-size: 17px; line-height: 1.45;
+    text-align: center; text-wrap: balance;
+    padding: 8px 6px 2px; animation: fadeup .25s ease-out;
+  }
+  .sentence b { color: var(--c1); font-weight: 700; }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(5px); } }
+
+  /* stories */
+  .story-cta {
+    width: 100%; text-align: left; padding: 14px 16px; border-radius: 18px;
+    border: 2.5px solid var(--edge); box-shadow: 4px 4px 0 var(--edge);
+    background: linear-gradient(120deg, var(--c5), var(--c4));
+    color: #fff; display: grid; gap: 2px;
+  }
+  .story-cta:active { transform: translate(4px,4px); box-shadow: none; }
+  .story-cta-big { font-size: 19px; font-weight: 800; }
+  .story-cta-sub { font-size: 12.5px; font-weight: 500; opacity: .9; }
+  .saybtn {
+    width: 100%; padding: 16px; border-radius: 16px;
+    border: 2.5px solid var(--edge); background: var(--c1); color: #fff;
+    font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 var(--edge);
+  }
+  .saybtn:active { transform: translateY(5px); box-shadow: none; }
+  .saybtn.live { background: var(--oops); animation: pulse 1s ease-in-out infinite; }
+  .topics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .topic {
+    padding: 10px 4px 8px; border-radius: 13px;
+    border: 2px solid var(--hair); background: var(--paper);
+    display: grid; gap: 2px; justify-items: center;
+    font-size: 11.5px; font-weight: 700; color: var(--ink-soft);
+  }
+  .topic span { font-size: 24px; line-height: 1.1; }
+  .topic.on { border-color: var(--edge); background: var(--c3); color: #1F2430; box-shadow: 2px 2px 0 var(--edge); }
+  .storycard {
+    border: 2.5px solid var(--edge); border-radius: 20px;
+    background: var(--paper-2); box-shadow: 5px 5px 0 var(--edge);
+    padding: 26px 18px; min-height: 190px;
+    display: grid; place-items: center;
+  }
+  .storyline {
+    margin: 0; font-family: var(--letter); font-size: clamp(22px, 6.5vw, 30px);
+    line-height: 1.5; text-align: center; text-wrap: balance;
+  }
+  .storyline button {
+    font: inherit; color: var(--c1); font-weight: 700;
+    border-bottom: 3px solid var(--c3); padding: 0 1px; border-radius: 3px;
+  }
+  .storyline button:active { background: var(--c3); color: #1F2430; }
+  .storyline .helper { color: var(--ink-soft); }
+  .inputrow { display: flex; gap: 7px; align-items: stretch; }
+  .inputrow input { flex: 1; }
+  .inputrow .mini { padding: 0 13px; font-size: 17px; }
+  .thinking { display: inline-block; animation: blinkdot 1.1s infinite; }
+  @keyframes blinkdot { 50% { opacity: .35; } }
+
+  /* ---------- sheet / toast ---------- */
+  .sheet-bg { position: fixed; inset: 0; background: rgba(20,16,10,.55); z-index: 80; display: grid; align-items: end; justify-items: center; }
+  .sheet {
+    width: 100%; max-width: 580px; max-height: 88vh; overflow-y: auto;
+    background: var(--paper); border: 2.5px solid var(--edge); border-bottom: 0;
+    border-radius: 22px 22px 0 0;
+    padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    display: grid; gap: 12px; animation: rise .2s ease-out;
+  }
+  @keyframes rise { from { transform: translateY(24px); opacity: 0; } }
+  .sheet h3 { margin: 0; font-size: 18px; font-weight: 800; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    background: var(--ink); color: var(--paper);
+    font-weight: 700; font-size: 13.5px; padding: 9px 15px; border-radius: 999px;
+    z-index: 90; box-shadow: 3px 3px 0 var(--shade); max-width: 90vw; text-align: center;
+  }
+  .bigword { font-family: var(--letter); font-weight: 700; font-size: 32px; text-align: center; }
+  .strip { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  .strip button {
+    font-family: var(--letter); font-weight: 700; font-size: 20px;
+    padding: 7px 12px; border-radius: 11px;
+    border: 2px solid var(--hair); background: var(--paper-2);
+  }
+  .strip button.lit { background: var(--c3); color: #1F2430; border-color: var(--edge); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar">
+    <div class="wordmark"><span id="markSlot"></span>Jelly Splat</div>
+    <button class="tbtn" id="navStop" hidden>Stop</button>
+    <button class="tbtn" id="navGrown">Grown-ups</button>
+  </div>
+
+  <!-- ===== HOME ===== -->
+  <main class="screen" id="scHome">
+    <div class="hero">
+      <div class="cast" id="cast"></div>
+      <span class="eyebrow" id="heroBatch">Working on</span>
+      <h1 id="heroTitle">Ready to splat?</h1>
+      <div class="chips" id="batchChips"></div>
+      <button class="play-btn" id="startBtn">Play ▸</button>
+      <button class="stretch-btn" id="stretchBtn" disabled>★ Stretch round</button>
+      <button class="stretch-btn" id="bookBtn" style="border-style:solid" hidden>📖 Read the book</button>
+      <div class="row" style="gap:8px">
+        <button class="half-btn" id="traceBtn">✎ Write the letters</button>
+        <button class="half-btn" id="albumBtn">★ Stickers</button>
+      </div>
+      <p id="heroSub">Pick a set and go</p>
+    </div>
+
+    <h2 class="sect">Stories</h2>
+    <button class="story-cta" id="makeStory">
+      <span class="story-cta-big">Make me a story</span>
+      <span class="story-cta-sub">About anything you like — with this week's words in it</span>
+    </button>
+    <div class="setlist" id="storyList" style="margin-top:9px"></div>
+    <div class="tickets">
+      <div class="ticket"><b id="stDue">0</b><span>due today</span></div>
+      <div class="ticket"><b id="stKnown">0</b><span>confident</span></div>
+      <div class="ticket"><b id="stDays">0</b><span>day streak</span></div>
+    </div>
+    <h2 class="sect">This week's book</h2>
+    <div class="setlist" id="bookSets"></div>
+    <h2 class="sect">Reception phonics</h2>
+    <div class="setlist" id="coreSets"></div>
+  </main>
+
+  <!-- ===== PLAY ===== -->
+  <main class="screen" id="scPlay" hidden>
+    <div class="gamewrap">
+      <div class="pips" id="pips"></div>
+      <div class="prompt">
+        <div class="ask" id="ask">Listen…</div>
+        <div class="mouthbox" id="promptBox"></div>
+        <button class="hearbtn" id="hearBtn">Hear it again</button>
+        <div class="sentence" id="sentence" hidden></div>
+      </div>
+      <div class="slots" id="slots" hidden></div>
+      <div class="stage" id="stage"></div>
+    </div>
+  </main>
+
+  <!-- ===== REVIEW ===== -->
+  <main class="screen" id="scReview" hidden>
+    <h2 class="sect">Session finished</h2>
+    <div class="tickets">
+      <div class="ticket"><b id="rvStars">0</b><span>splats</span></div>
+      <div class="ticket"><b id="rvAcc">0%</b><span>first try</span></div>
+      <div class="ticket"><b id="rvCount">0</b><span>words</span></div>
+    </div>
+    <h2 class="sect">How did he do?</h2>
+    <div class="setlist" id="revList"></div>
+    <button class="btn go" id="saveReview" style="width:100%;margin-top:16px;padding:14px">Save &amp; finish</button>
+    <p class="note" style="margin-top:12px">
+      <b>Tricky</b> brings a word back today. <b>Nearly</b> in a day or two.
+      <b>Confident</b> pushes it out further each time — 2 days, then 4, 8, 16.
+    </p>
+  </main>
+
+  <!-- ===== READ THE BOOK ===== -->
+  <main class="screen" id="scBook" hidden>
+    <div class="pips" id="bookPips"></div>
+    <h2 class="sect"><span id="bookTitle">The book</span></h2>
+    <div class="pagewrap">
+      <img id="bookPage" alt="Page of the book">
+    </div>
+    <div class="storycard" style="min-height:0;margin-top:12px;padding:16px 14px">
+      <p class="storyline" id="bookLines" style="font-size:22px"></p>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn ghost" id="bookPrev">◂ Back</button>
+      <button class="btn go" id="bookNext">Next page ▸</button>
+    </div>
+    <p class="note" style="text-align:center;margin-top:12px">Tap any word to hear it.</p>
+    <button class="tbtn" id="bookDone" style="margin-top:12px">Finish</button>
+  </main>
+
+  <!-- ===== WELL DONE (child) ===== -->
+  <main class="screen" id="scWell" hidden>
+    <div class="hero" style="margin-top:8px">
+      <h1 style="font-size:28px" id="wellTitle">You did it!</h1>
+      <div class="bigstars" id="wellStars"></div>
+      <div class="cast" id="wellSticker" style="height:120px"></div>
+      <p style="margin:0;text-align:center;font-size:15px;font-weight:600" id="wellLine"></p>
+      <button class="play-btn" id="wellAgain">Play again ▸</button>
+      <button class="stretch-btn" id="wellGrown" style="border-style:solid">Grown-up bit ▸</button>
+    </div>
+  </main>
+
+  <!-- ===== TRACE ===== -->
+  <main class="screen" id="scTrace" hidden>
+    <h2 class="sect">Write the letters</h2>
+    <div class="recstage">
+      <div class="recword" id="traceWord">a<small id="traceHow"></small></div>
+      <div class="tracebox">
+        <canvas id="traceGuide" width="600" height="600"></canvas>
+        <canvas id="traceInk" width="600" height="600"></canvas>
+      </div>
+      <div class="recprog" id="traceProg"></div>
+      <div class="bigstars" id="traceStars"></div>
+      <div class="row" style="justify-content:center">
+        <button class="btn ghost" id="traceClear">Rub out</button>
+        <button class="btn go" id="traceCheck">Check it</button>
+        <button class="btn" id="traceNext">Next ▸</button>
+      </div>
+      <button class="tbtn" id="traceDone">Finish</button>
+    </div>
+    <p class="note" style="margin-top:16px">
+      Trace with a finger. This checks the <b>shape</b> he draws, not the order of the strokes —
+      school teaches the stroke order, and the line under each letter is the reminder.
+    </p>
+  </main>
+
+  <!-- ===== STICKER ALBUM ===== -->
+  <main class="screen" id="scAlbum" hidden>
+    <h2 class="sect"><span id="albumCount">Sticker book</span></h2>
+    <div class="album" id="albumGrid"></div>
+    <p class="note" id="albumNote" style="margin-top:14px"></p>
+    <button class="tbtn" id="albumBack" style="margin-top:14px">Back</button>
+  </main>
+
+  <!-- ===== STORY: ASK ===== -->
+  <main class="screen" id="scAsk" hidden>
+    <div class="hero" style="margin-top:8px">
+      <h1 style="font-size:23px">What shall the story be about?</h1>
+      <p style="margin:0;text-align:center;font-size:14px;color:var(--ink-soft);font-weight:500">
+        Tap the pictures, or press the big button and say it out loud
+      </p>
+      <button class="saybtn" id="sayBtn">🎤 Say it</button>
+      <div class="topics" id="topicGrid"></div>
+      <label class="flab" for="askText" style="text-align:left">Or a grown-up can type it
+        <input type="text" id="askText" placeholder="dinosaurs in a muddy puddle">
+      </label>
+      <button class="play-btn" id="askGo">Make my story ▸</button>
+      <p class="note" style="text-align:center;margin:0" id="askNote"></p>
+    </div>
+    <button class="tbtn" id="askBack" style="margin-top:14px">Back</button>
+  </main>
+
+  <!-- ===== STORY: READ ===== -->
+  <main class="screen" id="scStory" hidden>
+    <div class="pips" id="storyPips"></div>
+    <h2 class="sect" id="storyTitle">A story</h2>
+    <div class="storycard">
+      <p class="storyline" id="storyLine"></p>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:16px">
+      <button class="btn ghost" id="storyPrev">◂ Back</button>
+      <button class="btn go" id="storyNext">Next ▸</button>
+    </div>
+    <p class="note" style="text-align:center;margin-top:14px">
+      Tap any <b>coloured</b> word to hear it. Grown-up reads the <b>grey</b> ones.
+    </p>
+    <div class="row" style="justify-content:center;margin-top:18px">
+      <button class="tbtn" id="storyAgain">Read again</button>
+      <button class="tbtn" id="storyNew">Another story</button>
+      <button class="tbtn" id="storyHome">Done</button>
+    </div>
+  </main>
+
+  <!-- ===== RECORDER ===== -->
+  <main class="screen" id="scRec" hidden>
+    <h2 class="sect"><span id="recSetName">Record</span></h2>
+    <div class="row" id="recTabs" style="margin-bottom:12px"></div>
+    <div class="recstage">
+      <div class="row" style="justify-content:center">
+        <button class="tbtn" id="modeCam">📹 Camera</button>
+        <button class="tbtn" id="modeMic">🎙 Voice only</button>
+        <button class="tbtn" id="modeHands">Hands-free: off</button>
+      </div>
+
+      <div class="camwrap" id="camWrap" hidden>
+        <video id="camView" playsinline autoplay muted></video>
+        <div class="camword" id="camWord"></div>
+        <div class="camdot" id="camDot" hidden></div>
+      </div>
+
+      <div class="recword" id="recWord">—<small id="recHint"></small></div>
+      <div class="mouthbox" id="recMouth" style="max-width:220px"></div>
+      <button class="recbtn" id="recBtn">Record</button>
+      <div class="recprog" id="recProg"></div>
+      <div class="row" style="justify-content:center">
+        <button class="btn ghost" id="recPlay">▶ Hear it</button>
+        <button class="btn ghost" id="recSkip">Skip ▸</button>
+        <button class="btn go" id="recNext" hidden>Keep &amp; next ▸</button>
+      </div>
+      <button class="tbtn" id="recDone">Finish recording</button>
+    </div>
+    <p class="note" style="margin-top:18px">
+      Say just the word, close to the phone, then stop. For the sound sets say the pure sound —
+      <b>“sss”</b>, not “ess”, and <b>“t”</b> without the “uh” on the end.
+      <b>Hands-free</b> runs the whole set on its own: the word appears, it counts you in, records two
+      seconds and moves on — put the phone down and just say each word as it comes up.
+    </p>
+  </main>
+
+  <!-- ===== GROWN-UPS ===== -->
+  <main class="screen" id="scGrown" hidden>
+    <h2 class="sect">This week's book</h2>
+    <div class="card">
+      <label class="flab" for="bkName">Book name — say it or type it
+        <span class="inputrow">
+          <input type="text" id="bkName" placeholder="e.g. Big Cat Phonics — Sam and the Dog">
+    
+        </span>
+      </label>
+      <label class="flab" for="bkWords">Words — or type them / paste a sentence from the book
+        <textarea id="bkWords" placeholder="sat pat tip&#10;or: Sam sat on the big red mat."></textarea>
+      </label>
+      <div class="row">
+        <button class="btn" id="bkSave">Add set</button>
+        <button class="btn ghost" id="bkCancel" hidden>Cancel edit</button>
+      </div>
+      <p class="note">Words are checked by you before anything is saved. Punctuation and repeats are stripped out, and words keep any progress they've already built up.</p>
+    </div>
+
+    <div class="card" id="photoCard" style="margin-top:10px" hidden>
+      <div class="eyebrow" style="text-align:left">Or photograph the pages</div>
+      <p class="note" style="margin:0">
+        Snap each page of the reading book. The phone reads the printed words itself, pulls out the
+        ones worth practising and keeps the real sentences — then she can read the actual pages here.
+        The first time you use it, it downloads the reader (about 4MB) and needs signal; after that
+        it works offline. Check what it read before you save it — photos of small print can confuse it.
+      </p>
+      <button class="btn go" id="photoPick">📷 Photograph the book</button>
+      <div id="photoStatus" class="note"></div>
+    </div>
+
+    <h2 class="sect">How he's doing</h2>
+    <div class="card">
+      <div class="tickets" style="margin:0">
+        <div class="ticket"><b id="rpDays">0</b><span>days this week</span></div>
+        <div class="ticket"><b id="rpQ">0</b><span>words practised</span></div>
+        <div class="ticket"><b id="rpAcc">—</b><span>first try</span></div>
+      </div>
+      <div id="rpTrouble"></div>
+      <div id="rpSets" style="display:grid;gap:7px"></div>
+      <p class="note" id="rpNote"></p>
+    </div>
+
+    <h2 class="sect">Your sets</h2>
+    <div class="setlist" id="ownSets"></div>
+
+    <h2 class="sect">Voices</h2>
+    <div class="card">
+      <p class="note" style="margin:0">
+        Every word plays in a real human voice. Order of preference: <b>your recording</b>, then a
+        <b>free community recording</b> where one exists, then just the mouth animation.
+        <b id="voiceStat"></b>
+      </p>
+      <div class="row">
+        <button class="btn ghost" id="showCredits">Where the free voices come from</button>
+      </div>
+    </div>
+
+    <h2 class="sect">Words &amp; sounds</h2>
+    <div class="row" id="mediaTabs" style="margin-bottom:10px"></div>
+    <button class="btn go" id="recAll" style="width:100%;margin-bottom:10px">🎙 Record this set</button>
+    <div class="wordgrid" id="mediaGrid"></div>
+
+    <h2 class="sect">Settings</h2>
+    <div class="card">
+      <div class="row">
+        <button class="tbtn" id="optRobot">Robot voice: off</button>
+        <button class="tbtn" id="optLen">Round: 10</button>
+        <button class="tbtn" id="optBatch">Batch: 6 words</button>
+      </div>
+      <div class="row">
+        <button class="btn go" id="optInstall" hidden>⤓ Install on this phone</button>
+        <button class="btn ghost" id="optBackup">⤓ Back up</button>
+        <button class="btn ghost" id="optRestore">⤒ Restore</button>
+      </div>
+      <p class="note" id="storeNote"></p>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ==========================================================
+   Jelly Splat Phonics — Reception phonics practice
+   ========================================================== */
+
+/* ---------- free voice library (one audio sprite) ---------- */
+const SPRITE={I:[0.3,0.78],all:[1.52,0.45],and:[2.43,0.38],are:[3.26,0.4],as:[4.11,0.57],bank:[5.12,0.5],be:[6.07,0.35],bed:[6.88,1.05],boat:[8.38,0.45],boil:[9.28,0.55],book:[10.27,0.93],born:[11.65,0.4],box:[12.51,0.52],burn:[13.48,0.6],by:[14.53,0.41],car:[15.39,0.42],chair:[16.27,0.96],chest:[17.68,0.56],coat:[18.69,0.98],cook:[20.12,0.36],cup:[20.92,0.45],dad:[21.82,0.41],dear:[22.68,0.37],dog:[23.5,0.95],down:[24.91,0.45],egg:[25.81,0.7],fan:[26.96,0.52],feet:[27.93,0.46],fish:[28.84,1.09],foot:[30.37,1.07],full:[31.89,0.92],get:[33.26,0.51],go:[34.22,0.39],got:[35.06,0.46],hair:[35.97,1],hammer:[37.41,0.92],has:[38.79,0.5],hat:[39.73,0.55],he:[40.73,0.96],hear:[42.14,0.67],her:[43.26,0.39],high:[44.09,1.14],his:[45.68,0.46],hurt:[46.59,0.43],into:[47.47,0.55],is:[48.47,0.48],jam:[49.4,1.09],kick:[50.94,0.35],kid:[51.73,0.37],kit:[52.55,0.43],leg:[53.44,0.6],letter:[54.49,1.25],light:[56.19,1.15],look:[57.79,0.52],man:[58.76,0.7],me:[59.91,0.38],moon:[60.74,0.56],much:[61.75,0.53],my:[62.74,0.39],nap:[63.58,0.53],night:[64.55,0.57],no:[65.57,1.1],now:[67.12,1.18],of:[68.75,0.42],off:[69.62,0.43],otter:[70.51,0.46],pat:[71.41,0.56],peck:[72.42,0.42],pink:[73.29,1.82],pull:[75.56,0.66],put:[76.66,0.45],rain:[77.56,0.59],run:[78.6,0.49],sad:[79.53,0.6],sat:[80.58,0.5],see:[81.53,0.48],she:[82.47,1],ship:[83.92,0.42],sit:[84.79,0.58],song:[85.82,0.61],sort:[86.88,0.55],star:[87.88,0.66],sun:[88.98,1.14],sure:[90.57,0.55],tail:[91.57,0.44],tan:[92.46,0.49],that:[93.4,0.46],the:[94.31,0.46],they:[95.22,0.68],thin:[96.34,0.36],think:[97.15,0.36],to:[97.96,0.42],turn:[98.83,0.54],up:[99.82,0.38],vet:[100.66,0.59],wait:[101.7,0.55],was:[102.7,0.53],we:[103.67,0.99],week:[105.12,0.51],win:[106.07,0.39],wing:[106.91,0.41],with:[107.77,0.56],yes:[108.78,1.15],you:[110.38,0.48],zoom:[111.31,0.59]};
+const CREDITS = [
+  ['Back ache', 'CC BY-SA 4.0', 58, 'Lingua Libre'],
+  ['Association Shtooka — Judith Franck', 'CC BY 3.0 US', 31, 'Shtooka (en-uk)'],
+  ['Vealhurl', 'CC BY-SA 4.0 / CC BY 4.0', 12, 'Lingua Libre'],
+  ['Kevin Steinhardt, Troll Control and others', 'Public domain / CC0', 4, 'Wikimedia Commons']
+];
+
+/* ---------- curriculum ---------- */
+const BUILTIN = [
+  { id: 'b_s1', name: 'Sounds: s a t p i n m d', kind: 'sound', phase: 'Phase 2 · Autumn 1',
+    items: 's|sun,a|ant,t|tap,p|pig,i|ink,n|net,m|man,d|dog' },
+  { id: 'b_s2', name: 'Sounds: g o c k ck e u r h b f l', kind: 'sound', phase: 'Phase 2 · Autumn 1',
+    items: 'g|goat,o|otter,c|cat,k|kit,ck|sock,e|egg,u|up,r|rat,h|hat,b|bat,f|fan,l|leg' },
+  { id: 'b_s3', name: 'Sounds: ff ll ss j v w x y z zz qu', kind: 'sound', phase: 'Phase 2 · Autumn 2',
+    items: 'ff|cliff,ll|bell,ss|hiss,j|jam,v|van,w|win,x|fox,y|yes,z|zip,zz|buzz,qu|queen' },
+  { id: 'b_s4', name: 'Sounds: ch sh th ng nk', kind: 'sound', phase: 'Phase 2 · Autumn 2',
+    items: 'ch|chip,sh|shop,th|thin,ng|ring,nk|pink' },
+  { id: 'b_s5', name: 'Sounds: ai ee igh oa oo', kind: 'sound', phase: 'Phase 3 · Spring 1',
+    items: 'ai|rain,ee|feet,igh|light,oa|boat,oo|moon,oo|book' },
+  { id: 'b_s6', name: 'Sounds: ar or ur ow oi ear air er', kind: 'sound', phase: 'Phase 3 · Spring 1',
+    items: 'ar|car,or|fork,ur|turn,ow|cow,oi|coin,ear|hear,air|hair,er|letter' },
+  { id: 'b_w1', name: 'Words: s a t p i n m d', kind: 'word', phase: 'Phase 2 · Autumn 1',
+    items: 'sat,pat,tap,tip,pin,nap,man,mat,dad,sad,sit,pit,tin,dim,tan' },
+  { id: 'b_w2', name: 'Words: g o c k ck e u r h b f l', kind: 'word', phase: 'Phase 2 · Autumn 1',
+    items: 'got,dog,cat,cot,kid,sock,duck,kick,peck,get,pen,up,mud,run,rug,cup,hat,hen,bat,bed,fan,leg,lip' },
+  { id: 'b_w3', name: 'Words: ff ll ss j v w x y z zz qu', kind: 'word', phase: 'Phase 2 · Autumn 2',
+    items: 'off,huff,bell,doll,hiss,mess,fluff,jam,jet,van,vet,win,wag,fox,box,yes,zip,buzz,fizz,quiz,quit' },
+  { id: 'b_w4', name: 'Words: ch sh th ng nk', kind: 'word', phase: 'Phase 2 · Autumn 2',
+    items: 'chip,chin,much,shop,ship,fish,thin,that,with,ring,song,wing,pink,think,bank,sunk,shell,chest' },
+  { id: 'b_w5', name: 'Words: ai ee igh oa oo', kind: 'word', phase: 'Phase 3 · Spring 1',
+    items: 'rain,wait,tail,week,feet,see,light,night,high,boat,goat,coat,moon,zoom,book,look,foot,cook' },
+  { id: 'b_w6', name: 'Words: ar or ur ow oi ear air er', kind: 'word', phase: 'Phase 3 · Spring 1',
+    items: 'car,park,star,fork,born,sort,hurt,turn,burn,cow,down,now,coin,join,boil,hear,dear,hair,chair,hammer,letter' },
+  { id: 'b_t1', name: 'Tricky words', kind: 'tricky', phase: 'Reception · all year',
+    items: 'the,I,is,put,pull,full,as,and,has,his,her,go,no,to,into,she,push,he,of,we,me,be' },
+  { id: 'b_t2', name: 'Tricky words 2', kind: 'tricky', phase: 'Reception · spring',
+    items: 'was,you,they,my,by,all,are,sure,pure' }
+];
+BUILTIN.forEach(function (s) {
+  s.items = s.items.split(',').map(function (raw) {
+    const b = raw.trim().split('|');
+    return { t: b[0], eg: b[1] || '', kind: s.kind };
+  });
+  s.builtin = true;
+});
+
+/* ---------- example sentences ----------
+   Every built-in word gets one short decodable sentence, so a sentence is always
+   there without asking Claude for one. Sound sets borrow their example word's. */
+const SENT = {
+  sat:'The cat sat on my lap.', pat:'I pat the big dog.', tap:'Tap, tap, tap on the tin!',
+  tip:'The tip of my pen is red.', pin:'A pin is sharp.', nap:'The pup had a nap.',
+  man:'The man ran up the hill.', mat:'Sit on the mat.', dad:'My dad is fun.',
+  sad:'The sad cat is wet.', sit:'Sit on the big red rug.', pit:'A pit in the mud.',
+  tin:'A tin of jam.', dim:'The light is dim.', tan:'The sand is tan.',
+  got:'I got a red hat.', dog:'The dog can run fast.', cat:'The cat had a nap.',
+  cot:'The kid is in his cot.', kid:'The kid can hop.', sock:'I lost my red sock.',
+  duck:'The duck is in the pond.', kick:'Kick it to me!', peck:'The hen can peck.',
+  get:'Get the big bag.', pen:'My pen is red.', up:'Go up and up!',
+  mud:'The pig is in the mud.', rat:'The rat ran off.', run:'Run, run, run!', rug:'The cat sat on the rug.',
+  cup:'A cup of milk.', hat:'My red hat is on.', hen:'The hen is on the nest.',
+  bat:'The bat can flap.', bed:'I hop into bed.', fan:'The fan is on.',
+  leg:'I bump my leg.', lip:'My lip is wet.', off:'Get off the bed!',
+  huff:'I huff and puff.', bell:'The bell can ring.', doll:'Her doll is in the box.',
+  hiss:'It can hiss!', mess:'The mud is a mess.', fluff:'The pup is soft fluff.',
+  jam:'Jam on my toast.', jet:'The jet is up high.', van:'Dad has a red van.',
+  vet:'The vet can help my dog.', win:'I can win!', wag:'The dog can wag his tail.',
+  fox:'The fox ran off.', box:'A box of socks.', yes:'Yes, I can!',
+  zip:'Zip up my coat.', buzz:'The bug can buzz.', fizz:'The drink can fizz.',
+  quiz:'A fun quiz!', quit:'Do not quit!', chip:'A chip and a dip.',
+  chin:'My chin is wet.', much:'Not too much!', shop:'We go to the shop.',
+  ship:'The ship is big.', fish:'The fish can swim.', thin:'The stick is thin.',
+  that:'Get that box!', with:'Run with me!', ring:'The bell can ring.',
+  song:'We sing a song.', wing:'A duck has a wing.', pink:'My socks are pink.',
+  think:'I think, think, think.', bank:'Sit on the bank.', sunk:'The ship has sunk.',
+  shell:'A shell on the sand.', chest:'A chest of gold!', rain:'The rain is wet.',
+  wait:'Wait for me!', tail:'The cat has a long tail.', week:'Next week we go.',
+  feet:'My feet are big.', see:'I can see the moon.', light:'The light is on.',
+  night:'The moon is up at night.', high:'Jump up high!', boat:'The boat is on the sand.',
+  goat:'The goat can jump.', coat:'My coat is warm.', moon:'The moon is up high.',
+  zoom:'Zoom went the car!', book:'A book on the bed.', look:'Look at the moon!',
+  foot:'I hurt my foot.', cook:'Dad can cook.', car:'The car is fast.',
+  park:'We run in the park.', star:'A star in the sky.', fork:'I got a big fork.',
+  born:'The lamb was born.', sort:'Sort the socks.', hurt:'It did not hurt.',
+  turn:'It is my turn!', burn:'Do not burn the toast.', cow:'The cow can moo!',
+  down:'Sit down!', now:'Not now!', coin:'I got a coin.',
+  join:'Join in the fun!', boil:'The pot can boil.', hear:'I can hear a dog.',
+  dear:'Dear Dad, I miss you.', hair:'My hair is red.', chair:'Sit on the chair.',
+  hammer:'Bang the hammer!', letter:'A letter for me!',
+  the:'The dog ran off.', I:'I can do it!', is:'This is my cat.',
+  put:'Put it in the box.', pull:'Pull the cart.', full:'My cup is full.',
+  as:'As big as a bus!', and:'Mum and Dad.', has:'He has a red hat.',
+  his:'His dog can run.', her:'Her hat is pink.', go:'Go, go, go!',
+  no:'No! Not that!', to:'We go to the shop.', into:'I hop into bed.',
+  she:'She can run fast.', push:'Push the big box.', he:'He is my pal.',
+  of:'A cup of milk.', we:'We can do it!', me:'Run with me!',
+  be:'Be a big kid!', was:'It was fun!', you:'Can you see me?',
+  they:'They can run.', my:'My dog is big.', by:'Sit by me.',
+  all:'We all had fun.', are:'You are my pal.', sure:'I am sure!',
+  pure:'The snow is pure.', sun:'The sun is up.', ant:'The ant is on a log.',
+  pig:'The pig is in the mud.', ink:'The ink is black.', net:'A fish in the net.',
+  otter:'The otter can swim.', kit:'My kit is in the bag.', egg:'I had an egg.',
+  cliff:'The cliff is high.', queen:'The queen has a crown.'
+};
+function sentenceFor(it) {
+  const k = keyOf(it);
+  if (S.sent[k] && S.sent[k].text) return S.sent[k].text;
+  const w = it.kind === 'sound' ? String(it.eg || '') : String(it.t);
+  return SENT[w] || SENT[w.toLowerCase()] || null;
+}
+
+/* ---------- grapheme splitting ---------- */
+const GRAPHEMES = ['igh','air','ear','ure','tch','dge','ch','sh','th','ng','nk','qu','ck','ff','ll','ss','zz','ph','wh',
+  'ai','ay','ee','ea','oa','oo','ow','ou','oi','oy','ar','or','ur','er','ir','ue','ew','ie','aw','au','oe','ey'];
+function splitWord(word) {
+  const w = String(word).toLowerCase().replace(/[^a-z]/g, '');
+  const out = []; let i = 0;
+  while (i < w.length) {
+    let hit = null;
+    for (let g = 0; g < GRAPHEMES.length; g++) {
+      const gr = GRAPHEMES[g];
+      if (w.substr(i, gr.length) === gr) {
+        if ((gr === 'ng' || gr === 'nk') && /[aeiou]/.test(w[i + 2] || '')) continue;
+        hit = gr; break;
+      }
+    }
+    if (hit) { out.push(hit); i += hit.length; } else { out.push(w[i]); i++; }
+  }
+  return out.length ? out : [w || '?'];
+}
+
+/* ---------- mouth shapes ---------- */
+const V = {
+  closed:{w:.55,h:.04,r:.25,teeth:0,tongue:0}, lipTeeth:{w:.52,h:.12,r:.1,teeth:1,tongue:0},
+  tip:{w:.48,h:.30,r:0,teeth:.6,tongue:1},     hiss:{w:.55,h:.14,r:0,teeth:1,tongue:.2},
+  thh:{w:.52,h:.22,r:0,teeth:.8,tongue:1},     round:{w:.30,h:.34,r:1,teeth:.3,tongue:0},
+  back:{w:.48,h:.40,r:.1,teeth:.2,tongue:.3},  ah:{w:.58,h:.82,r:.1,teeth:0,tongue:.2},
+  eh:{w:.64,h:.52,r:0,teeth:.3,tongue:.2},     ih:{w:.62,h:.36,r:0,teeth:.4,tongue:.2},
+  ee:{w:.80,h:.22,r:0,teeth:.8,tongue:.3},     oh:{w:.38,h:.60,r:.85,teeth:0,tongue:0},
+  oo:{w:.22,h:.30,r:1,teeth:0,tongue:0},       uh:{w:.52,h:.48,r:.2,teeth:.1,tongue:.2},
+  rr:{w:.36,h:.32,r:.7,teeth:.2,tongue:.6},    rest:{w:.50,h:.06,r:.2,teeth:0,tongue:0}
+};
+const VISEME = {
+  m:['closed'],b:['closed'],p:['closed'],
+  f:['lipTeeth'],v:['lipTeeth'],ff:['lipTeeth'],ph:['lipTeeth'],
+  t:['tip'],d:['tip'],n:['tip'],l:['tip'],ll:['tip'],tch:['tip'],dge:['round'],
+  s:['hiss'],z:['hiss'],ss:['hiss'],zz:['hiss'],th:['thh'],
+  sh:['round'],ch:['round'],j:['round'],qu:['round','oo'],w:['round'],wh:['round'],
+  c:['back'],k:['back'],ck:['back'],g:['back'],ng:['back'],nk:['back'],h:['back'],x:['back','hiss'],
+  r:['rr'],a:['ah'],ar:['ah'],au:['oh'],aw:['oh'],
+  e:['eh'],ea:['ee'],ee:['ee'],ey:['ee'],y:['ee'],
+  i:['ih'],ie:['ah','ee'],igh:['ah','ee'],
+  o:['oh'],oa:['oh'],oe:['oh'],or:['oh'],ow:['ah','oo'],ou:['ah','oo'],
+  oo:['oo'],ue:['oo'],ew:['oo'],u:['uh'],ur:['uh'],er:['uh'],ir:['uh'],
+  oi:['oh','ee'],oy:['oh','ee'],ai:['eh','ee'],ay:['eh','ee'],
+  air:['eh','uh'],ear:['ee','uh'],ure:['oo','uh']
+};
+function framesFor(graphemes, totalMs) {
+  const out = [];
+  graphemes.forEach(function (g) {
+    (VISEME[g] || ['uh']).forEach(function (k) { out.push({ v: V[k] || V.uh, dur: 1 }); });
+  });
+  const total = totalMs || out.length * 260;
+  const per = Math.max(110, total / Math.max(1, out.length));
+  out.forEach(function (f) { f.dur = per; });
+  out.push({ v: V.rest, dur: 200 });
+  return out;
+}
+
+const MOUTH_SVG =
+  '<svg viewBox="0 0 220 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
+  '<defs><clipPath id="mclip"><ellipse cx="0" cy="0" rx="46" ry="30"/></clipPath></defs>' +
+  '<g transform="translate(110,76)"><g class="m-scale">' +
+  '<ellipse cx="0" cy="0" rx="46" ry="30" fill="#40131F"/>' +
+  '<g clip-path="url(#mclip)">' +
+  '<rect class="m-tt" x="-40" y="-33" width="80" height="15" rx="4" fill="#FFF8EC"/>' +
+  '<rect class="m-tb" x="-36" y="20" width="72" height="14" rx="4" fill="#F2E2D2"/>' +
+  '<ellipse class="m-tg" cx="0" cy="26" rx="30" ry="18" fill="#F0748F"/></g>' +
+  '<ellipse class="m-lip" cx="0" cy="0" rx="46" ry="30" fill="none" stroke="#E8455F" stroke-width="9"/>' +
+  '<ellipse class="m-out" cx="0" cy="0" rx="50" ry="34" fill="none" stroke="#1F2430" stroke-width="3"/>' +
+  '</g></g></svg>';
+
+function makeMouth(box) {
+  box.innerHTML = MOUTH_SVG;
+  const scale = box.querySelector('.m-scale'), tt = box.querySelector('.m-tt'),
+        tb = box.querySelector('.m-tb'), tg = box.querySelector('.m-tg'), lip = box.querySelector('.m-lip');
+  let timer = null;
+  function set(v, ms) {
+    const d = (ms || 130) + 'ms';
+    const sx = 0.45 + v.w * 0.85 - v.r * 0.22, sy = 0.16 + v.h * 1.05;
+    scale.style.transition = 'transform ' + d + ' ease';
+    scale.setAttribute('transform', 'scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')');
+    [tt, tb, tg, lip].forEach(function (el) { el.style.transition = 'opacity ' + d + ', transform ' + d; });
+    tt.style.opacity = v.teeth; tb.style.opacity = v.teeth * .75;
+    tg.style.opacity = v.tongue;
+    tg.setAttribute('transform', 'translate(0,' + (v.tongue > .8 ? -16 : 4) + ')');
+    lip.setAttribute('stroke-width', (7 + v.r * 7).toFixed(1));
+  }
+  function play(frames) {
+    stop(); let i = 0;
+    (function step() {
+      if (i >= frames.length) { timer = null; return; }
+      const f = frames[i++];
+      set(f.v, Math.min(f.dur, 190));
+      timer = setTimeout(step, f.dur);
+    })();
+  }
+  function stop() { if (timer) { clearTimeout(timer); timer = null; } }
+  set(V.rest, 0);
+  return { set: set, play: play, stop: stop };
+}
+
+/* ---------- monsters (procedural blobs) ---------- */
+function rng(seed) { let s = seed >>> 0 || 1; return function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 10000) / 10000; }; }
+function blobPath(seed, r) {
+  const rand = rng(seed), n = 7, pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const rr = r * (0.82 + rand() * 0.32);
+    pts.push([Math.cos(a) * rr, Math.sin(a) * rr * 0.94]);
+  }
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    if (i === 0) d += 'M' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1);
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += 'C' + c1[0].toFixed(1) + ' ' + c1[1].toFixed(1) + ',' + c2[0].toFixed(1) + ' ' + c2[1].toFixed(1) +
+         ',' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+  }
+  return d + 'Z';
+}
+const MCOL = ['--c1', '--c2', '--c3', '--c4', '--c5', '--c6'];
+function monsterSVG(seed, text, colorVar) {
+  const rand = rng(seed * 7 + 3);
+  const body = blobPath(seed * 31 + 11, 42);
+  const legs = rand() > .45, horns = rand() > .55, spots = rand() > .6;
+  const eyeY = -17 - rand() * 5, eyeGap = 13 + rand() * 5, eyeR = 6.5 + rand() * 2.5;
+  const fs = Math.max(12.5, Math.min(30, 34 - String(text).length * 2.6));
+  let extra = '';
+  if (horns) {
+    extra += '<path d="M-16 -38 L-20 -54 L-8 -42Z" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3" stroke-linejoin="round"/>' +
+             '<path d="M16 -38 L21 -55 L9 -42Z" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3" stroke-linejoin="round"/>';
+  }
+  if (legs) {
+    extra += '<rect x="-24" y="32" width="13" height="16" rx="6" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3"/>' +
+             '<rect x="11" y="32" width="13" height="16" rx="6" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3"/>';
+  }
+  let dots = '';
+  if (spots) {
+    for (let i = 0; i < 3; i++) {
+      dots += '<circle cx="' + (-30 + rand() * 58).toFixed(0) + '" cy="' + (4 + rand() * 24).toFixed(0) +
+              '" r="' + (2.5 + rand() * 2).toFixed(1) + '" fill="var(--edge)" opacity=".2"/>';
+    }
+  }
+  return '<svg viewBox="-60 -62 120 124" aria-hidden="true">' +
+    '<ellipse class="m-shadow" cx="0" cy="52" rx="30" ry="6" fill="var(--edge)" opacity=".14"/>' +
+    '<g class="m-body">' + extra +
+    '<path d="' + body + '" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3.5" stroke-linejoin="round"/>' +
+    '<path d="' + body + '" fill="none" stroke="#fff" stroke-width="2.5" opacity=".28" transform="scale(.82) translate(-3,-5)"/>' +
+    dots +
+    '<g class="m-eyes">' +
+      '<ellipse cx="' + (-eyeGap) + '" cy="' + eyeY + '" rx="' + eyeR + '" ry="' + (eyeR * 1.15) + '" fill="#FFF8EC" stroke="var(--edge)" stroke-width="2.5"/>' +
+      '<ellipse cx="' + eyeGap + '" cy="' + eyeY + '" rx="' + eyeR + '" ry="' + (eyeR * 1.15) + '" fill="#FFF8EC" stroke="var(--edge)" stroke-width="2.5"/>' +
+      '<circle class="m-pupil" cx="' + (-eyeGap) + '" cy="' + eyeY + '" r="3.2" fill="var(--edge)"/>' +
+      '<circle class="m-pupil" cx="' + eyeGap + '" cy="' + eyeY + '" r="3.2" fill="var(--edge)"/>' +
+    '</g>' +
+    '<text x="0" y="' + (16 + fs * .34).toFixed(0) + '" text-anchor="middle" font-family="Andika, sans-serif" ' +
+      'font-weight="700" font-size="' + fs.toFixed(0) + '" fill="#1F2430">' + esc(text) + '</text>' +
+    '</g></svg>';
+}
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+/* ---------- sound effects ---------- */
+let actx = null;
+function tone(freq, dur, when, type, gain) {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime + (when || 0), o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain || .16, t0 + .02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + .05);
+  } catch (e) { /* no audio */ }
+}
+const SFX = {
+  splat: function () { tone(500, .11, 0, 'triangle'); tone(760, .14, .06, 'triangle'); },
+  nope:  function () { tone(210, .15, 0, 'sine', .11); },
+  win:   function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, .17, i * .085, 'triangle', .14); }); }
+};
+
+/* ---------- voice playback ---------- */
+let libAudio = null, libStop = null, libUnlocked = false;
+function libReady() {
+  if (!libAudio) {
+    libAudio = new Audio('voices.mp3');
+    libAudio.preload = 'auto';
+    libAudio.load();
+  }
+  return libAudio;
+}
+/* Safari will not seek an audio element until it has been played once from a
+   real tap, so the first tap of a session primes it silently. */
+function unlockAudio() {
+  const a = libReady();
+  if (libUnlocked) return;
+  try {
+    a.muted = true;
+    const p = a.play();
+    const done = function () { a.pause(); a.muted = false; libUnlocked = true; };
+    if (p && p.then) p.then(done).catch(function () { a.muted = false; });
+    else done();
+  } catch (e) { a.muted = false; }
+}
+function playSprite(word) {
+  const s = SPRITE[String(word).toLowerCase()] || (word === 'I' ? SPRITE.I : null);
+  if (!s) return 0;
+  const a = libReady();
+  clearTimeout(libStop);
+  const go = function () {
+    try {
+      a.currentTime = s[0];
+      const p = a.play();
+      if (p && p.catch) p.catch(function () {});
+      libStop = setTimeout(function () { a.pause(); }, (s[1] + 0.12) * 1000);
+    } catch (e) { /* not seekable yet */ }
+  };
+  if (a.readyState >= 2) go();
+  else a.addEventListener('canplay', go, { once: true });
+  return s[1] * 1000;
+}
+let ownAudio = null;
+function playOwn(src) {
+  try {
+    if (ownAudio) ownAudio.pause();
+    ownAudio = new Audio(src);
+    const p = ownAudio.play();
+    if (p && p.catch) p.catch(function () {});
+    return ownAudio;
+  } catch (e) { return null; }
+}
+function robot(text, rate) {
+  if (!S.settings.robot || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = speechSynthesis.getVoices();
+    const v = vs.find(function (x) { return /en[-_]GB/i.test(x.lang); }) || vs.find(function (x) { return /^en/i.test(x.lang); });
+    if (v) u.voice = v;
+    u.lang = 'en-GB'; u.rate = rate || .78; u.pitch = 1.05;
+    speechSynthesis.speak(u);
+  } catch (e) { /* no speech */ }
+}
+function libWordFor(item) {
+  if (item.kind === 'sound') return SPRITE[String(item.eg).toLowerCase()] ? item.eg : null;
+  const w = String(item.t);
+  if (SPRITE[w.toLowerCase()]) return w.toLowerCase();
+  if (w === 'I' && SPRITE.I) return 'I';
+  return null;
+}
+
+/* ---------- storage ---------- */
+const LS = 'jellysplat.v2';
+const S = {
+  db: null, assets: null,
+  sets: {}, progress: {}, media: {}, voice: {}, sent: {}, stories: {},
+  write: {}, album: { list: [] }, stats: { days: {} }, books: {},
+  localMedia: {}, localVoice: {},
+  sample: null,
+  settings: { robot: false, roundLen: 10, batchSize: 6, streak: 0, lastDay: '' },
+  selectedSet: 'b_s1'
+};
+function lsRead() { try { return JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { return {}; } }
+function lsWrite() {
+  try {
+    localStorage.setItem(LS, JSON.stringify({
+      sets: S.sets, progress: S.progress, media: S.media, sent: S.sent, stories: S.stories,
+      write: S.write, album: S.album, stats: S.stats, books: S.books,
+      settings: S.settings, selectedSet: S.selectedSet
+    }));
+  } catch (e) { /* full or blocked */ }
+}
+async function initStore() {
+  const l = lsRead();
+  S.sets = l.sets || {}; S.progress = l.progress || {}; S.media = l.media || {};
+  S.sent = l.sent || {}; S.stories = l.stories || {};
+  S.write = l.write || {}; S.album = l.album || { list: [] }; S.stats = l.stats || { days: {} };
+  S.books = l.books || {};
+  S.settings = Object.assign(S.settings, l.settings || {});
+  S.selectedSet = l.selectedSet || S.selectedSet;
+  /* Standalone build: no account, no server. Everything stays on this device —
+     settings and progress in localStorage, photos and recordings in IndexedDB. */
+  S.db = null; S.assets = null; S.sample = null;
+  document.getElementById('photoCard').hidden = false;
+  await idbIndex();
+  renderAll();
+}
+function saveDoc(path, body) {
+  lsWrite();
+  if (!S.db) return Promise.resolve();
+  return S.db.doc(path).set(body).catch(function () {});
+}
+function delDoc(path) { if (S.db) S.db.doc(path).delete().catch(function () {}); }
+
+/* ---------- IndexedDB (clips too big or wrongly-typed for the cloud) ---------- */
+let idb = null;
+function idbOpen() {
+  return new Promise(function (res) {
+    if (idb) return res(idb);
+    try {
+      const r = indexedDB.open('jellysplat', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('clips'); };
+      r.onsuccess = function () { idb = r.result; res(idb); };
+      r.onerror = function () { res(null); };
+    } catch (e) { res(null); }
+  });
+}
+async function idbPut(key, blob) {
+  const d = await idbOpen(); if (!d) return false;
+  return new Promise(function (res) {
+    try {
+      const tx = d.transaction('clips', 'readwrite');
+      tx.objectStore('clips').put(blob, key);
+      tx.oncomplete = function () { res(true); };
+      tx.onerror = function () { res(false); };
+    } catch (e) { res(false); }
+  });
+}
+async function idbGet(key) {
+  const d = await idbOpen(); if (!d) return null;
+  return new Promise(function (res) {
+    try {
+      const r = d.transaction('clips', 'readonly').objectStore('clips').get(key);
+      r.onsuccess = function () { res(r.result || null); };
+      r.onerror = function () { res(null); };
+    } catch (e) { res(null); }
+  });
+}
+async function idbDel(key) {
+  const d = await idbOpen(); if (!d) return;
+  try { d.transaction('clips', 'readwrite').objectStore('clips').delete(key); } catch (e) { /* noop */ }
+}
+async function idbIndex() {
+  const d = await idbOpen(); if (!d) return;
+  return new Promise(function (res) {
+    try {
+      const r = d.transaction('clips', 'readonly').objectStore('clips').getAllKeys();
+      r.onsuccess = function () {
+        (r.result || []).forEach(function (k) {
+          if (String(k).slice(0, 2) === 'a:') S.localVoice[String(k).slice(2)] = true;
+          else S.localMedia[k] = true;
+        });
+        res();
+      };
+      r.onerror = function () { res(); };
+    } catch (e) { res(); }
+  });
+}
+
+/* ---------- sets, keys, spaced repetition ---------- */
+function allSets() {
+  const custom = Object.keys(S.sets).map(function (id) { return Object.assign({ id: id }, S.sets[id]); })
+    .sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+  return custom.concat(BUILTIN);
+}
+function getSet(id) { return allSets().find(function (s) { return s.id === id; }); }
+function keyOf(it) {
+  return it.kind + '-' + String(it.t).toLowerCase().replace(/[^a-z0-9]/g, '_') +
+    (it.eg ? '-' + it.eg.toLowerCase().replace(/[^a-z0-9]/g, '_') : '');
+}
+function today() { return new Date().toISOString().slice(0, 10); }
+function addDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+const INTERVALS = [1, 1, 2, 4, 8, 16];
+const BLANK = { box: 0, due: '1970-01-01', seen: 0, right: 0, wrong: 0 };
+function rec(it) { return S.progress[keyOf(it)] || BLANK; }
+function isDue(it) { return rec(it).due <= today(); }
+function markItem(it, grade) {
+  const k = keyOf(it), r = Object.assign({}, BLANK, S.progress[k]);
+  if (grade === 0) { r.box = 0; r.due = today(); }
+  else if (grade === 1) { r.due = addDays(INTERVALS[Math.min(r.box, 5)]); }
+  else { r.box = Math.min(5, r.box + 1); r.due = addDays(INTERVALS[r.box]); }
+  r.seen = (r.seen || 0) + 1; r.text = it.t; r.kind = it.kind;
+  S.progress[k] = r;
+  return saveDoc('progress/' + k, r);
+}
+
+/* ---------- what plays for an item ---------- */
+const urlCache = {};
+async function ownRecording(it) {
+  const k = keyOf(it);
+  if (urlCache[k] !== undefined) return urlCache[k];
+  let out = null;
+  if (S.media[k] && S.media[k].assetId) out = { type: 'video', url: '/_blob/' + S.media[k].assetId };
+  else if (S.localMedia[k]) { const b = await idbGet(k); if (b) out = { type: 'video', url: URL.createObjectURL(b) }; }
+  else if (S.voice[k] && S.voice[k].b64) out = { type: 'audio', url: 'data:' + S.voice[k].mime + ';base64,' + S.voice[k].b64 };
+  else if (S.localVoice[k]) { const b = await idbGet('a:' + k); if (b) out = { type: 'audio', url: URL.createObjectURL(b) }; }
+  urlCache[k] = out;
+  return out;
+}
+function hasOwn(it) {
+  const k = keyOf(it);
+  return !!(S.media[k] || S.localMedia[k] || S.voice[k] || S.localVoice[k]);
+}
+
+/* Look a bare grapheme up in the curriculum so it shares the same key as the
+   sound item the parent recorded ('h' inside 'hat' -> the 'h as in hat' item),
+   instead of missing the recording under a key that never existed. */
+let SOUND_INDEX = null;
+function soundItem(g) {
+  if (!SOUND_INDEX) {
+    SOUND_INDEX = {};
+    BUILTIN.forEach(function (s) {
+      if (s.kind !== 'sound') return;
+      s.items.forEach(function (it) { if (!SOUND_INDEX[it.t]) SOUND_INDEX[it.t] = it; });
+    });
+  }
+  return SOUND_INDEX[String(g).toLowerCase()] || { t: g, eg: '', kind: 'sound' };
+}
+
+async function present(box, ref, it, opts) {
+  const soundOnly = !!(opts && opts.soundOnly);
+  const own = await ownRecording(it);
+  const graphemes = it.kind === 'sound' ? [it.t] : splitWord(it.t);
+
+  if (own && own.type === 'video') {
+    box.innerHTML = '<span class="tag">Your video</span><video playsinline preload="auto" src="' + own.url + '"></video>';
+    const v = box.querySelector('video');
+    v.currentTime = 0;
+    const p = v.play(); if (p && p.catch) p.catch(function () {});
+    return;
+  }
+  if (!ref.m || ref.box !== box) {
+    ref.m = makeMouth(box); ref.box = box;
+    ref.tag = document.createElement('span');
+    ref.tag.className = 'tag';
+    box.appendChild(ref.tag);
+  }
+  if (own && own.type === 'audio') {
+    ref.tag.textContent = 'Your voice';
+    const a = playOwn(own.url);
+    const go = function () { ref.m.play(framesFor(graphemes, (a && a.duration ? a.duration * 1000 : 0) || 0)); };
+    if (a && !isNaN(a.duration) && a.duration) go();
+    else if (a) { a.addEventListener('loadedmetadata', go, { once: true }); setTimeout(go, 350); }
+    else go();
+    return;
+  }
+  const lib = soundOnly ? null : libWordFor(it);
+  if (lib) {
+    /* No pure-sound recording exists, so this plays the whole example word.
+       Say so plainly — otherwise it reads as "to make /h/, say hat". */
+    ref.tag.textContent = it.kind === 'sound' ? 'the word “' + lib + '”' : 'Free voice';
+    const ms = playSprite(lib);
+    ref.m.play(framesFor(it.kind === 'sound' ? splitWord(lib) : graphemes, ms));
+    return;
+  }
+  ref.tag.textContent = it.kind === 'sound' ? 'sound not recorded yet'
+    : (S.settings.robot ? 'Robot voice' : 'No recording yet');
+  ref.m.play(framesFor(graphemes, 0));
+  if (!soundOnly) robot(it.kind === 'sound' ? (it.eg || it.t) : it.t, .72);
+}
+
+/* ==========================================================
+   GAME
+   ========================================================== */
+const G = { set: null, queue: [], i: 0, q: null, tries: 0, stars: 0, firstTry: 0, results: [], mouth: {}, blendIdx: 0 };
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+/* Bite-size batches: a set is worked through a few words at a time. A word is
+   "known" at box 3 (three confident sessions); once every word in the batch is
+   known the next batch opens and the stretch round unlocks. */
+const KNOWN_BOX = 3;
+function batchInfo(set) {
+  const size = Math.max(3, S.settings.batchSize || 6);
+  const batches = [];
+  for (let i = 0; i < set.items.length; i += size) batches.push(set.items.slice(i, i + size));
+  if (!batches.length) batches.push([]);
+  const known = function (it) { return rec(it).box >= KNOWN_BOX; };
+  let idx = batches.findIndex(function (b) { return b.some(function (it) { return !known(it); }); });
+  const allDone = idx < 0;
+  if (allDone) idx = batches.length - 1;
+  const items = batches[idx];
+  return {
+    idx: idx, count: batches.length, items: items,
+    mastered: items.every(known),
+    allDone: allDone,
+    knownCount: items.filter(known).length
+  };
+}
+/* Weakest words come round more often; a short batch simply repeats across the
+   round rather than padding it out with words he isn't working on. */
+function queueFrom(pool, n) {
+  const q = [];
+  let guard = 0;
+  while (q.length < n && guard++ < 60) {
+    const pass = [];
+    pool.forEach(function (it) {
+      pass.push(it);
+      if (rec(it).box < 2) pass.push(it);
+    });
+    shuffle(pass).forEach(function (it) {
+      if (q.length < n && q[q.length - 1] !== it) q.push(it);
+    });
+    if (pool.length === 1) break;
+  }
+  return q;
+}
+function buildQueue(set) {
+  const b = batchInfo(set);
+  const pool = b.items.length ? b.items : set.items;
+  return queueFrom(pool, S.settings.roundLen);
+}
+/* The stretch round: everything he has met before, due words first. */
+function stretchPool() {
+  const seen = {}, pool = [];
+  allSets().forEach(function (s) {
+    s.items.forEach(function (it) {
+      const k = keyOf(it);
+      if (seen[k]) return;
+      seen[k] = true;
+      const r = rec(it);
+      if (r.seen || r.right) pool.push(it);
+    });
+  });
+  if (pool.length < 4) {
+    BUILTIN.filter(function (s) { return s.kind !== 'sound'; }).forEach(function (s) {
+      s.items.slice(0, 8).forEach(function (it) {
+        const k = keyOf(it);
+        if (!seen[k]) { seen[k] = true; pool.push(it); }
+      });
+    });
+  }
+  pool.sort(function (a, b) { return (isDue(b) ? 1 : 0) - (isDue(a) ? 1 : 0) || rec(a).box - rec(b).box; });
+  return pool.slice(0, 24);
+}
+function similarity(a, b) {
+  const ga = splitWord(a.t), gb = splitWord(b.t);
+  let sh = 0; ga.forEach(function (g) { if (gb.indexOf(g) > -1) sh++; });
+  return sh + (ga.length === gb.length ? 1 : 0);
+}
+function startGame(setId) {
+  const set = getSet(setId);
+  if (!set || !set.items.length) return;
+  libReady();
+  G.set = set; G.queue = buildQueue(set); G.i = 0; G.stars = 0; G.firstTry = 0; G.results = []; G.mouth = {};
+  G.stretch = false; G.committed = false;
+  show('scPlay');
+  nextQuestion();
+}
+function startStretch() {
+  const pool = stretchPool();
+  if (pool.length < 2) return;
+  libReady();
+  G.set = { id: '_stretch', name: 'Stretch round', kind: 'word', items: pool };
+  G.queue = queueFrom(pool.slice(0, 12), S.settings.roundLen);
+  G.i = 0; G.stars = 0; G.firstTry = 0; G.results = []; G.mouth = {};
+  G.stretch = true; G.committed = false;
+  show('scPlay');
+  nextQuestion();
+}
+function nextQuestion() {
+  if (G.i >= G.queue.length) return endGame();
+  const item = G.queue[G.i];
+  G.tries = 0;
+  const graphemes = splitWord(item.t);
+  const blendable = item.kind === 'word' && graphemes.length >= 2 && graphemes.length <= 4;
+  const mode = (blendable && G.i % 3 === 2) ? 'blend' : 'splat';
+  G.q = { item: item, mode: mode, graphemes: graphemes };
+
+  const pips = document.getElementById('pips');
+  pips.innerHTML = '';
+  for (let i = 0; i < G.queue.length; i++) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < G.i ? ' done' : i === G.i ? ' now' : '');
+    pips.appendChild(p);
+  }
+  const ask = document.getElementById('ask'), stage = document.getElementById('stage'), slots = document.getElementById('slots');
+  stage.innerHTML = ''; slots.innerHTML = '';
+  const sent = document.getElementById('sentence');
+  sent.hidden = true; sent.innerHTML = '';
+
+  if (mode === 'blend') {
+    slots.hidden = false;
+    G.blendIdx = 0;
+    const support = rec(item).box < 2;
+    ask.textContent = 'Build the word — tap the sounds in order';
+    graphemes.forEach(function (g) {
+      const s = document.createElement('div');
+      s.className = 'slot';
+      s.textContent = support ? g : '';
+      slots.appendChild(s);
+    });
+    const tray = shuffle(graphemes.slice());
+    stage.className = 'stage' + (tray.length === 3 ? ' three' : '');
+    tray.forEach(function (g, i) { stage.appendChild(makeMonster(g, i, { grapheme: g })); });
+  } else {
+    slots.hidden = true;
+    if (item.kind === 'sound') {
+      const own = hasOwn(item);
+      ask.innerHTML = own ? 'Which sound is it?'
+        : 'Which sound do you hear in <em>' + esc(item.eg || item.t) + '</em>?';
+    } else {
+      ask.textContent = 'Which word is it?';
+    }
+    /* Distractors must never repeat the target's label: 'oo' as in moon and
+       'oo' as in book are different items that look identical on a monster,
+       so showing both makes the question unanswerable. */
+    const pool = G.set.items.filter(function (x) {
+      return keyOf(x) !== keyOf(item) && String(x.t).toLowerCase() !== String(item.t).toLowerCase();
+    });
+    pool.sort(function (a, b) { return similarity(item, b) - similarity(item, a); });
+    const near = shuffle(pool.slice(0, 6));
+    const count = Math.max(2, Math.min(4, 2 + rec(item).box));
+    const opts = shuffle([item].concat(near.slice(0, count - 1)));
+    stage.className = 'stage' + (opts.length === 3 ? ' three' : '');
+    opts.forEach(function (o, i) { stage.appendChild(makeMonster(o.t, i, { item: o })); });
+  }
+  hearPrompt();
+}
+let monsterSeed = 1;
+function makeMonster(text, idx, payload) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'monster b' + (1 + idx % 4);
+  b.setAttribute('aria-label', text);
+  b.innerHTML = monsterSVG(monsterSeed++ * 17 + idx, text, MCOL[(monsterSeed + idx) % MCOL.length]);
+  b.querySelector('.m-body').classList.add('b' + (1 + idx % 4));
+  b.addEventListener('click', function () { onTap(b, payload); });
+  return b;
+}
+function splatAt(el) {
+  gooBurst(el);
+  if (el.classList.contains('monster')) el.classList.add('pop');
+}
+function gooBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cs = getComputedStyle(document.documentElement);
+  for (let i = 0; i < 9; i++) {
+    const g = document.createElement('span');
+    g.className = 'goo';
+    g.style.background = cs.getPropertyValue(MCOL[i % MCOL.length]).trim() || '#E8455F';
+    g.style.left = (r.left + r.width / 2 - 7) + 'px';
+    g.style.top = (r.top + r.height / 2 - 7) + 'px';
+    const a = Math.random() * Math.PI * 2, d = 45 + Math.random() * 70;
+    g.style.setProperty('--dx', Math.cos(a) * d + 'px');
+    g.style.setProperty('--dy', Math.sin(a) * d + 'px');
+    document.body.appendChild(g);
+    setTimeout(function () { g.remove(); }, 700);
+  }
+}
+function onTap(el, payload) {
+  if (!G.q) return;
+  if (G.q.mode === 'blend') {
+    const want = G.q.graphemes[G.blendIdx];
+    if (payload.grapheme === want) {
+      const slot = document.getElementById('slots').children[G.blendIdx];
+      slot.textContent = want;
+      slot.classList.add('filled');
+      G.blendIdx++;
+      SFX.splat();
+      splatAt(el);
+      if (G.blendIdx >= G.q.graphemes.length) setTimeout(win, 420);
+      else if (G.mouth.m) G.mouth.m.play(framesFor([want], 0));
+    } else miss(el);
+    return;
+  }
+  if (keyOf(payload.item) === keyOf(G.q.item)) { SFX.splat(); splatAt(el); setTimeout(win, 430); }
+  else miss(el);
+}
+function miss(el) {
+  G.tries++;
+  SFX.nope();
+  el.classList.add('shake');
+  setTimeout(function () { el.classList.remove('shake'); }, 460);
+  /* Fading a wrong answer out is a hint when you are picking ONE of several.
+     When building a word, every letter in the tray is needed — greying one out
+     makes the word impossible to finish, so never do it here. */
+  if (G.tries >= 2 && G.q && G.q.mode !== 'blend') el.classList.add('gone');
+  setTimeout(hearPrompt, 300);
+}
+/* Highlight the target word inside its sentence — the word he just splatted,
+   now doing a job in a real sentence. */
+function sentenceHTML(it) {
+  const s = sentenceFor(it);
+  if (!s) return null;
+  const target = (it.kind === 'sound' ? String(it.eg || '') : String(it.t)).toLowerCase();
+  if (!target) return esc(s);
+  return s.split(/(\s+)/).map(function (chunk) {
+    const bare = chunk.replace(/[^A-Za-z'’]/g, '').toLowerCase();
+    return bare === target ? '<b>' + esc(chunk) + '</b>' : esc(chunk);
+  }).join('');
+}
+function win() {
+  SFX.win();
+  const it = G.q.item, k = keyOf(it), r = Object.assign({}, BLANK, S.progress[k]);
+  if (G.tries === 0) { r.right = (r.right || 0) + 1; G.firstTry++; } else { r.wrong = (r.wrong || 0) + 1; }
+  r.text = it.t; r.kind = it.kind;
+  S.progress[k] = r;
+  saveDoc('progress/' + k, r);
+  G.stars++;
+  G.results.push({ item: it, tries: G.tries, grade: G.tries === 0 ? 2 : (G.tries === 1 ? 1 : 0) });
+  G.i++;
+  const html = sentenceHTML(it);
+  const el = document.getElementById('sentence');
+  if (html) {
+    el.innerHTML = html;
+    el.hidden = false;
+    setTimeout(nextQuestion, 1700);
+  } else {
+    setTimeout(nextQuestion, 240);
+  }
+}
+function hearPrompt() { if (G.q) present(document.getElementById('promptBox'), G.mouth, G.q.item); }
+
+function endGame() {
+  const acc = G.results.length ? Math.round(100 * G.firstTry / G.results.length) : 0;
+  document.getElementById('rvStars').textContent = G.stars;
+  document.getElementById('rvAcc').textContent = acc + '%';
+  document.getElementById('rvCount').textContent = G.results.length;
+  const t = today();
+  if (S.settings.lastDay !== t) {
+    S.settings.streak = (S.settings.lastDay === addDays(-1)) ? (S.settings.streak || 0) + 1 : 1;
+    S.settings.lastDay = t;
+    saveDoc('settings/app', S.settings);
+  }
+  /* daily log, for the parent report and the reading record */
+  const days = Object.assign({}, S.stats.days || {});
+  const d = Object.assign({ s: 0, q: 0, r: 0 }, days[t]);
+  d.s += 1;
+  d.q += G.results.length;
+  d.r += G.firstTry;
+  days[t] = d;
+  const keys = Object.keys(days).sort();
+  while (keys.length > 70) delete days[keys.shift()];
+  S.stats = { days: days };
+  saveDoc('stats/app', S.stats);
+
+  /* child's payoff first; the grading screen is for the grown-up */
+  const won = awardSticker(acc);
+  document.getElementById('wellTitle').textContent =
+    acc >= 90 ? 'Brilliant!' : acc >= 60 ? 'Well done!' : 'Good trying!';
+  document.getElementById('wellStars').innerHTML =
+    starRow(acc >= 90 ? 3 : acc >= 60 ? 2 : 1);
+  document.getElementById('wellSticker').innerHTML = won.map(function (s) {
+    return monsterSVG(s.seed, '', MCOL[s.seed % MCOL.length]);
+  }).join('');
+  document.getElementById('wellLine').textContent =
+    G.stars + ' splatted · ' + won.length + ' new sticker' + (won.length > 1 ? 's' : '');
+  SFX.win();
+  show('scWell');
+  return;
+}
+function buildReview() {
+  const list = document.getElementById('revList');
+  list.innerHTML = '';
+  const seen = {};
+  G.results.forEach(function (r) {
+    const k = keyOf(r.item);
+    if (seen[k]) return;
+    seen[k] = true;
+    const row = document.createElement('div');
+    row.className = 'revrow';
+    const w = document.createElement('div');
+    w.className = 'w';
+    w.textContent = r.item.t + (r.item.kind === 'sound' && r.item.eg ? ' · ' + r.item.eg : '');
+    const sc = document.createElement('div');
+    sc.className = 'sc';
+    sc.textContent = r.tries === 0 ? 'first try' : r.tries + ' miss' + (r.tries > 1 ? 'es' : '');
+    const play = document.createElement('button');
+    play.className = 'iconbtn'; play.textContent = '▶';
+    play.setAttribute('aria-label', 'Hear ' + r.item.t);
+    play.addEventListener('click', function () { openWord(r.item); });
+    const grades = document.createElement('div');
+    grades.className = 'grades';
+    ['Tricky', 'Nearly', 'Confident'].forEach(function (lab, gi) {
+      const b = document.createElement('button');
+      b.className = 'grade g' + gi + (gi === r.grade ? ' on' : '');
+      b.textContent = lab;
+      b.addEventListener('click', function () {
+        r.grade = gi;
+        grades.querySelectorAll('.grade').forEach(function (x, xi) { x.classList.toggle('on', xi === gi); });
+      });
+      grades.appendChild(b);
+    });
+    row.appendChild(w); row.appendChild(sc); row.appendChild(play); row.appendChild(grades);
+    list.appendChild(row);
+  });
+  show('scReview');
+}
+document.getElementById('wellGrown').addEventListener('click', buildReview);
+document.getElementById('wellAgain').addEventListener('click', async function () {
+  await commitGrades();
+  startGame(S.selectedSet);
+});
+/* Apply the round's grades exactly once. The grading screen is optional, so if
+   it is skipped the grades still land, taken from how he actually did — without
+   this, boxes never move, the batch never completes and stretch never unlocks. */
+async function commitGrades() {
+  if (G.committed || !G.results.length) return;
+  G.committed = true;
+  const done = {};
+  for (const r of G.results) {
+    const k = keyOf(r.item);
+    if (done[k]) continue;
+    done[k] = true;
+    await markItem(r.item, r.grade);
+  }
+  renderAll();
+}
+document.getElementById('saveReview').addEventListener('click', async function () {
+  await commitGrades();
+  toast('Saved — see you tomorrow');
+  show('scHome');
+});
+
+/* ==========================================================
+   RECORDING
+   ========================================================== */
+const REC = { list: [], i: 0, setId: null, stream: null, streamMode: null, mr: null, blob: null,
+              timer: null, mode: 'cam', hands: false, running: false, mouthRef: {} };
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+async function getStream(mode) {
+  if (REC.stream && REC.streamMode === mode) return REC.stream;
+  stopStream();
+  try {
+    REC.stream = await navigator.mediaDevices.getUserMedia(mode === 'cam'
+      ? { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+          audio: { echoCancellation: true, noiseSuppression: true } }
+      : { audio: { echoCancellation: true, noiseSuppression: true } });
+    REC.streamMode = mode;
+    if (mode === 'cam') {
+      const v = document.getElementById('camView');
+      v.srcObject = REC.stream;
+      const p = v.play(); if (p && p.catch) p.catch(function () {});
+    }
+    return REC.stream;
+  } catch (e) { REC.stream = null; REC.streamMode = null; return null; }
+}
+function stopStream() {
+  if (REC.stream) { REC.stream.getTracks().forEach(function (t) { t.stop(); }); }
+  REC.stream = null; REC.streamMode = null;
+  const v = document.getElementById('camView');
+  if (v) v.srcObject = null;
+}
+function pickMime(mode) {
+  const opts = mode === 'cam'
+    ? ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm', 'video/mp4']
+    : ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
+  for (const m of opts) { if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; }
+  return '';
+}
+function recordOnce(maxMs) {
+  return new Promise(async function (resolve) {
+    const stream = await getStream(REC.mode);
+    if (!stream) { resolve(null); return; }
+    const mime = pickMime(REC.mode);
+    let mr;
+    try {
+      const cfg = REC.mode === 'cam'
+        ? { mimeType: mime, videoBitsPerSecond: 600000, audioBitsPerSecond: 48000 }
+        : { mimeType: mime, audioBitsPerSecond: 32000 };
+      mr = new MediaRecorder(stream, mime ? cfg : undefined);
+    } catch (e) { resolve(null); return; }
+    const chunks = [];
+    const btn = document.getElementById('recBtn');
+    REC.mr = mr;
+    mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = function () {
+      clearTimeout(REC.timer);
+      REC.mr = null;
+      document.getElementById('camDot').hidden = true;
+      btn.textContent = REC.hands ? 'Stop hands-free' : 'Record again';
+      btn.classList.remove('live');
+      resolve(chunks.length ? new Blob(chunks, { type: mr.mimeType || mime || 'video/webm' }) : null);
+    };
+    mr.start();
+    if (REC.mode === 'cam') document.getElementById('camDot').hidden = false;
+    btn.textContent = 'Stop';
+    btn.classList.add('live');
+    REC.timer = setTimeout(function () { if (mr.state === 'recording') mr.stop(); }, maxMs);
+  });
+}
+function countIn(n) {
+  return new Promise(function (resolve) {
+    const wrap = document.getElementById('camWrap');
+    const host = (REC.mode === 'cam' && !wrap.hidden) ? wrap : document.getElementById('recMouth');
+    const el = document.createElement('div');
+    el.className = 'countin';
+    host.appendChild(el);
+    let k = n;
+    (function tick() {
+      if (!REC.running && REC.hands) { el.remove(); resolve(); return; }
+      if (k <= 0) { el.remove(); resolve(); return; }
+      el.textContent = k;
+      tone(660, .08, 0, 'triangle', .1);
+      k--;
+      setTimeout(tick, 650);
+    })();
+  });
+}
+
+function startRecorder(setId) {
+  const set = getSet(setId);
+  if (!set) return;
+  REC.setId = setId;
+  REC.list = set.items.slice();
+  REC.i = 0;
+  document.getElementById('recSetName').textContent = 'Recording: ' + set.name;
+  drawRecTabs();
+  show('scRec');
+  setMode(REC.mode);
+}
+/* Switch sets without leaving the recorder. */
+function drawRecTabs() {
+  const tabs = document.getElementById('recTabs');
+  tabs.innerHTML = '';
+  allSets().forEach(function (s) {
+    const b = document.createElement('button');
+    b.className = 'tbtn' + (s.id === REC.setId ? ' on' : '');
+    b.textContent = s.name.replace('Sounds: ', '◦ ').replace('Words: ', '');
+    b.addEventListener('click', function () {
+      if (s.id === REC.setId) return;
+      REC.running = false;
+      if (REC.mr && REC.mr.state === 'recording') REC.mr.stop();
+      REC.blob = null;
+      mediaTab = s.id;
+      startRecorder(s.id);
+      renderGrown();
+    });
+    tabs.appendChild(b);
+  });
+}
+function setMode(m) {
+  if (REC.running) return;
+  REC.mode = m;
+  stopStream();
+  document.getElementById('camWrap').hidden = (m !== 'cam');
+  document.getElementById('recMouth').hidden = (m === 'cam');
+  document.getElementById('recWord').hidden = (m === 'cam');
+  document.getElementById('modeCam').classList.toggle('on', m === 'cam');
+  document.getElementById('modeMic').classList.toggle('on', m === 'mic');
+  if (m === 'cam') getStream('cam').then(function (s) {
+    if (!s) {
+      toast('Camera blocked — switching to the phone camera app');
+      setMode('mic');
+    }
+  });
+  recStep();
+}
+function recStep() {
+  REC.blob = null;
+  const it = REC.list[REC.i];
+  if (!it) { finishRecording(); return; }
+  const hint = it.kind === 'sound'
+    ? 'just the sound you hear in “' + esc(it.eg || '') + '” — not the whole word'
+    : (hasOwn(it) ? 'already recorded — this replaces it' : 'say the word');
+  document.getElementById('recWord').innerHTML = esc(it.t) + '<small>' + hint + '</small>';
+  document.getElementById('camWord').innerHTML = esc(it.t) + '<small>' + hint + '</small>';
+  document.getElementById('recProg').textContent = (REC.i + 1) + ' of ' + REC.list.length;
+  document.getElementById('recNext').hidden = true;
+  if (!REC.running) {
+    document.getElementById('recBtn').textContent = REC.hands ? 'Start run' : 'Record';
+    document.getElementById('recBtn').classList.remove('live');
+  }
+  /* Never play a sample while a run is live — the mic would record it. */
+  if (REC.mode !== 'cam' && !REC.running) present(document.getElementById('recMouth'), REC.mouthRef, it);
+}
+
+async function toggleRecord() {
+  if (REC.hands) { runHandsFree(); return; }
+  if (REC.mr && REC.mr.state === 'recording') { REC.mr.stop(); return; }
+  const blob = await recordOnce(4000);
+  if (!blob) { noCapture(); return; }
+  REC.blob = blob;
+  document.getElementById('recNext').hidden = false;
+  if (REC.mode === 'mic') playOwn(URL.createObjectURL(blob));
+}
+function noCapture() {
+  toast('No camera or mic access here — opening the phone camera instead');
+  const it = REC.list[REC.i];
+  if (it) pickVideo(it, function () { REC.i++; recStep(); });
+}
+async function runHandsFree() {
+  if (REC.running) { REC.running = false; if (REC.mr && REC.mr.state === 'recording') REC.mr.stop(); return; }
+  const stream = await getStream(REC.mode);
+  if (!stream) { noCapture(); return; }
+  REC.running = true;
+  const btn = document.getElementById('recBtn');
+  btn.textContent = 'Stop hands-free';
+  while (REC.running && REC.i < REC.list.length) {
+    recStep();
+    await countIn(2);
+    if (!REC.running) break;
+    const blob = await recordOnce(2200);
+    if (!REC.running) break;
+    if (blob) { REC.blob = blob; await keepRecording(true); }
+    else { REC.i++; }
+    await wait(300);
+  }
+  REC.running = false;
+  btn.textContent = 'Record';
+  btn.classList.remove('live');
+  if (REC.i >= REC.list.length) finishRecording();
+}
+
+function blobToB64(blob) {
+  return new Promise(function (res, rej) {
+    const r = new FileReader();
+    r.onload = function () { res(String(r.result).split(',')[1]); };
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+async function keepRecording(quiet) {
+  const it = REC.list[REC.i];
+  if (!REC.blob || !it) return;
+  const k = keyOf(it);
+  delete urlCache[k];
+  const mime = (REC.blob.type || '').split(';')[0];
+  let stored = false;
+
+  if (mime.indexOf('video') === 0) {
+    stored = await storeVideo(it, REC.blob, true);
+  } else {
+    if (S.db && REC.blob.size < 170000) {
+      try {
+        const body = { mime: mime || 'audio/webm', b64: await blobToB64(REC.blob),
+                       text: it.t, kind: it.kind, at: Date.now() };
+        await S.db.doc('voice/' + k).set(body);
+        S.voice[k] = body;
+        stored = true;
+      } catch (e) { stored = false; }
+    }
+    if (!stored) {
+      const ok = await idbPut('a:' + k, REC.blob);
+      if (ok) { S.localVoice[k] = true; stored = true; }
+    }
+  }
+  if (!stored) { toast('Could not save “' + it.t + '”'); return; }
+  if (!quiet) toast('Saved');
+  REC.i++;
+  REC.blob = null;
+  if (!REC.running) { recStep(); renderGrown(); }
+}
+function finishRecording() {
+  REC.running = false;
+  stopStream();
+  REC.mr = null;
+  renderAll();
+  show('scGrown');
+  toast('Recordings saved');
+}
+document.getElementById('recBtn').addEventListener('click', toggleRecord);
+document.getElementById('recNext').addEventListener('click', function () { keepRecording(false); });
+document.getElementById('recSkip').addEventListener('click', function () { REC.i++; recStep(); });
+document.getElementById('recPlay').addEventListener('click', function () {
+  const it = REC.list[REC.i];
+  if (REC.blob && REC.mode === 'mic') playOwn(URL.createObjectURL(REC.blob));
+  else if (it) openWord(it);
+});
+document.getElementById('recDone').addEventListener('click', finishRecording);
+document.getElementById('modeCam').addEventListener('click', function () { setMode('cam'); });
+document.getElementById('modeMic').addEventListener('click', function () { setMode('mic'); });
+document.getElementById('modeHands').addEventListener('click', function () {
+  REC.hands = !REC.hands;
+  this.textContent = 'Hands-free: ' + (REC.hands ? 'on' : 'off');
+  this.classList.toggle('on', REC.hands);
+  document.getElementById('recBtn').textContent = REC.hands ? 'Start run' : 'Record';
+});
+
+/* ---------- video capture (fallback / richer option) ---------- */
+const VIDEO_OK = ['video/mp4', 'video/webm'];
+function pickVideo(item, after) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'video/*';
+  input.setAttribute('capture', 'user');
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.addEventListener('change', async function () {
+    const f = input.files && input.files[0];
+    input.remove();
+    if (!f) return;
+    await storeVideo(item, f);
+    if (after) after();
+  });
+  input.click();
+}
+async function storeVideo(item, file, quiet) {
+  const k = keyOf(item);
+  delete urlCache[k];
+  if (file.size > 20 * 1024 * 1024) { toast('That clip is too big — try a shorter one'); return false; }
+  const type = (file.type || '').split(';')[0];
+  if (S.assets && VIDEO_OK.indexOf(type) > -1) {
+    try {
+      if (!quiet) toast('Saving your video…');
+      const up = await S.assets.upload(file, { type: type });
+      S.media[k] = { assetId: up.id, text: item.t, kind: item.kind, at: Date.now() };
+      await saveDoc('media/' + k, S.media[k]);
+      if (!quiet) { toast('Video saved'); renderAll(); }
+      return true;
+    } catch (e) { /* fall back to on-device */ }
+  }
+  const ok = await idbPut(k, file);
+  if (ok) {
+    S.localMedia[k] = true;
+    if (!quiet) { toast('Saved on this device'); renderAll(); }
+    return true;
+  }
+  if (!quiet) toast('Could not save that clip');
+  return false;
+}
+async function removeOwn(item) {
+  const k = keyOf(item);
+  delete urlCache[k];
+  if (S.media[k] && S.media[k].assetId && S.assets) {
+    try { await S.assets.delete(S.media[k].assetId); } catch (e) { /* already gone */ }
+  }
+  if (S.media[k]) { delete S.media[k]; delDoc('media/' + k); }
+  if (S.voice[k]) { delete S.voice[k]; delDoc('voice/' + k); }
+  if (S.localMedia[k]) { delete S.localMedia[k]; await idbDel(k); }
+  if (S.localVoice[k]) { delete S.localVoice[k]; await idbDel('a:' + k); }
+  lsWrite();
+  renderAll();
+  toast('Recording removed');
+}
+
+/* ==========================================================
+   SCREENS
+   ========================================================== */
+function show(id) {
+  ['scHome', 'scPlay', 'scReview', 'scGrown', 'scRec', 'scAsk', 'scStory',
+   'scWell', 'scTrace', 'scAlbum', 'scBook'].forEach(function (s) {
+    document.getElementById(s).hidden = (s !== id);
+  });
+  document.getElementById('navStop').hidden = (id !== 'scPlay');
+  document.getElementById('navGrown').textContent = (id === 'scGrown') ? 'Done' : 'Grown-ups';
+  document.getElementById('navGrown').hidden =
+    ['scPlay', 'scRec', 'scAsk', 'scStory', 'scWell', 'scTrace', 'scAlbum', 'scBook'].indexOf(id) > -1;
+  const sc = document.getElementById(id);
+  if (sc) sc.scrollTop = 0;
+}
+
+function renderHome() {
+  const sets = allSets(), books = sets.filter(function (s) { return !s.builtin; }),
+        core = sets.filter(function (s) { return s.builtin; });
+  let due = 0, known = 0;
+  sets.forEach(function (s) {
+    s.items.forEach(function (it) {
+      if (isDue(it)) due++;
+      if (rec(it).box >= 4) known++;
+    });
+  });
+  document.getElementById('stDue').textContent = due;
+  document.getElementById('stKnown').textContent = known;
+  document.getElementById('stDays').textContent = S.settings.streak || 0;
+  const nSt = (S.album.list || []).length;
+  document.getElementById('albumBtn').textContent = nSt ? '★ Stickers · ' + nSt : '★ Stickers';
+
+  const sel = getSet(S.selectedSet) || sets[0];
+  if (sel) S.selectedSet = sel.id;
+  document.getElementById('heroTitle').textContent = sel ? sel.name : 'Add this week’s words';
+  document.getElementById('startBtn').disabled = !sel;
+  const pages = sel && S.books[sel.id] && S.books[sel.id].pages;
+  document.getElementById('bookBtn').hidden = !(pages && pages.length);
+
+  const eyebrow = document.getElementById('heroBatch');
+  const chips = document.getElementById('batchChips');
+  const stretch = document.getElementById('stretchBtn');
+  const sub = document.getElementById('heroSub');
+  chips.innerHTML = '';
+  if (!sel) {
+    eyebrow.textContent = 'Nothing set up yet';
+    sub.textContent = 'Open Grown-ups to add this week’s book';
+    stretch.disabled = true;
+    return;
+  }
+  const b = batchInfo(sel);
+  eyebrow.textContent = b.count > 1
+    ? 'Working on · batch ' + (b.idx + 1) + ' of ' + b.count
+    : 'Working on';
+  b.items.forEach(function (it) {
+    const r = rec(it), c = document.createElement('span');
+    c.className = 'chip b' + Math.min(5, r.box) + (r.box >= KNOWN_BOX ? ' done' : '');
+    c.innerHTML = '<i></i>';
+    c.appendChild(document.createTextNode(it.t));
+    chips.appendChild(c);
+  });
+  stretch.disabled = !b.mastered;
+  stretch.textContent = b.mastered ? '★ Stretch round' : '★ Stretch round — locked';
+  if (b.allDone) {
+    sub.textContent = 'Every word here is solid. Time for a new book, or take the stretch round.';
+  } else if (b.mastered) {
+    sub.textContent = 'Batch ' + (b.idx + 1) + ' is solid — play once more to move on, or stretch him.';
+  } else {
+    sub.textContent = b.knownCount + ' of ' + b.items.length + ' confident in this batch' +
+      (b.count > 1 ? ' · the rest unlock after' : '');
+  }
+
+  const cast = document.getElementById('cast');
+  if (!cast.childNodes.length) {
+    const words = sel && sel.kind === 'sound' ? ['a', 's', 't'] : ['sat', 'pin', 'dog'];
+    cast.innerHTML = words.map(function (w, i) {
+      return monsterSVG(91 + i * 13, w, MCOL[i * 2 % MCOL.length]);
+    }).join('');
+  }
+  function draw(el, list, empty) {
+    el.innerHTML = '';
+    if (!list.length) { el.innerHTML = '<p class="note">' + empty + '</p>'; return; }
+    list.forEach(function (s) {
+      const d = s.items.filter(isDue).length;
+      const own = s.items.filter(hasOwn).length;
+      const row = document.createElement('button');
+      row.className = 'setrow' + (s.id === S.selectedSet ? ' sel' : '');
+      row.innerHTML = '<span class="spine"></span><span class="meta"><b></b><small></small></span>' +
+        (own ? '<span class="mic-pill">🎙 ' + own + '</span>' : '') +
+        '<span class="pill' + (d ? '' : ' rest') + '">' + (d ? d + ' due' : 'rested') + '</span>';
+      row.querySelector('.spine').style.background = 'var(' + MCOL[s.name.length % MCOL.length] + ')';
+      row.querySelector('b').textContent = s.name;
+      row.querySelector('small').textContent = (s.phase || 'Your set') + ' · ' + s.items.length + ' ' +
+        (s.kind === 'sound' ? 'sounds' : 'words');
+      row.addEventListener('click', function () { S.selectedSet = s.id; lsWrite(); renderHome(); });
+      el.appendChild(row);
+    });
+  }
+  draw(document.getElementById('bookSets'), books, 'No book set yet — add this week’s words under Grown-ups.');
+  draw(document.getElementById('coreSets'), core, '');
+  renderStories();
+}
+
+let editingSet = null, mediaTab = 'b_s1';
+function renderGrown() {
+  const own = allSets().filter(function (s) { return !s.builtin; });
+  const el = document.getElementById('ownSets');
+  el.innerHTML = own.length ? '' :
+    '<p class="note">Nothing yet. Add this week’s reading-book words above — they show up on the home screen straight away.</p>';
+  own.forEach(function (s) {
+    const row = document.createElement('div');
+    row.className = 'setrow';
+    row.innerHTML = '<span class="meta"><b></b><small></small></span>';
+    row.querySelector('b').textContent = s.name;
+    row.querySelector('small').textContent = s.items.map(function (i) { return i.t; }).join(' · ');
+    const ed = document.createElement('button');
+    ed.className = 'tbtn'; ed.textContent = 'Edit';
+    ed.addEventListener('click', function () {
+      editingSet = s.id;
+      document.getElementById('bkName').value = s.name;
+      document.getElementById('bkWords').value = s.items.map(function (i) { return i.t; }).join(' ');
+      document.getElementById('bkSave').textContent = 'Save changes';
+      document.getElementById('bkCancel').hidden = false;
+      document.getElementById('scGrown').scrollTop = 0;
+    });
+    const del = document.createElement('button');
+    del.className = 'tbtn'; del.textContent = 'Delete';
+    del.addEventListener('click', function () {
+      confirmSheet('Delete “' + s.name + '”?', 'Recordings and progress for those words are kept.', function () {
+        delete S.sets[s.id];
+        lsWrite();
+        delDoc('sets/' + s.id);
+        renderAll();
+        toast('Set deleted');
+      });
+    });
+    row.appendChild(ed); row.appendChild(del);
+    el.appendChild(row);
+  });
+
+  let ownCount = 0, libCount = 0, total = 0;
+  allSets().forEach(function (s) {
+    s.items.forEach(function (it) {
+      total++;
+      if (hasOwn(it)) ownCount++;
+      else if (libWordFor(it)) libCount++;
+    });
+  });
+  document.getElementById('voiceStat').textContent =
+    ' Right now: ' + ownCount + ' in your voice, ' + libCount + ' from the free library, ' +
+    (total - ownCount - libCount) + ' with no recording yet.';
+
+  const tabs = document.getElementById('mediaTabs');
+  tabs.innerHTML = '';
+  allSets().forEach(function (s) {
+    const b = document.createElement('button');
+    b.className = 'tbtn' + (s.id === mediaTab ? ' on' : '');
+    b.textContent = s.name.replace('Sounds: ', '◦ ').replace('Words: ', '');
+    b.addEventListener('click', function () { mediaTab = s.id; renderGrown(); });
+    tabs.appendChild(b);
+  });
+  const grid = document.getElementById('mediaGrid');
+  grid.innerHTML = '';
+  const set = getSet(mediaTab) || allSets()[0];
+  if (!set) return;
+  document.getElementById('recAll').textContent =
+    '🎙 Record all ' + set.items.length + ' in “' + set.name + '”';
+  set.items.forEach(function (it) {
+    const tile = document.createElement('div');
+    tile.className = 'wtile';
+    const lab = document.createElement('div');
+    lab.className = 'lab';
+    lab.innerHTML = esc(it.t) + (it.eg ? ' <small>as in ' + esc(it.eg) + '</small>' : '');
+    const play = document.createElement('button');
+    play.className = 'mini'; play.textContent = '▶';
+    play.setAttribute('aria-label', 'Hear ' + it.t);
+    play.addEventListener('click', function () { openWord(it); });
+    const tag = document.createElement('span');
+    tag.className = 'mini ' + (hasOwn(it) ? 'has' : 'lib');
+    /* For a sound, a library hit is only the example WORD, never the pure
+       sound — don't let it read as though the sound is covered. */
+    tag.textContent = hasOwn(it) ? 'yours'
+      : (libWordFor(it) ? (it.kind === 'sound' ? 'word only' : 'free') : 'none');
+    const recBtn = document.createElement('button');
+    recBtn.className = 'mini'; recBtn.textContent = '🎙';
+    recBtn.setAttribute('aria-label', 'Record ' + it.t);
+    recBtn.addEventListener('click', function () {
+      REC.setId = mediaTab;
+      REC.list = [it]; REC.i = 0;
+      document.getElementById('recSetName').textContent = 'Recording: ' + it.t;
+      drawRecTabs();
+      show('scRec');
+      setMode(REC.mode);
+    });
+    tile.appendChild(lab); tile.appendChild(tag); tile.appendChild(play); tile.appendChild(recBtn);
+    grid.appendChild(tile);
+  });
+
+  document.getElementById('optRobot').textContent = 'Robot voice: ' + (S.settings.robot ? 'on' : 'off');
+  document.getElementById('optRobot').classList.toggle('on', !!S.settings.robot);
+  document.getElementById('optLen').textContent = 'Round: ' + S.settings.roundLen;
+  document.getElementById('optBatch').textContent = 'Batch: ' + (S.settings.batchSize || 6) + ' words';
+  document.getElementById('storeNote').textContent =
+    'Everything is saved on this phone only — no account, nothing sent anywhere. ' +
+    'Use Back up below to keep a copy.';
+}
+/* What a parent actually needs: is he doing it, and what needs another go. */
+function renderReport() {
+  const days = S.stats.days || {};
+  let d7 = 0, q7 = 0, r7 = 0;
+  for (let i = 0; i < 7; i++) {
+    const k = addDays(-i), v = days[k];
+    if (!v) continue;
+    d7++; q7 += v.q || 0; r7 += v.r || 0;
+  }
+  document.getElementById('rpDays').textContent = d7;
+  document.getElementById('rpQ').textContent = q7;
+  document.getElementById('rpAcc').textContent = q7 ? Math.round(100 * r7 / q7) + '%' : '—';
+
+  const trouble = [];
+  allSets().forEach(function (s) {
+    s.items.forEach(function (it) {
+      const r = rec(it);
+      if ((r.seen || r.right || r.wrong) && r.box < 2 && (r.wrong || 0) > 0) {
+        trouble.push({ it: it, wrong: r.wrong || 0 });
+      }
+    });
+  });
+  trouble.sort(function (a, b) { return b.wrong - a.wrong; });
+  const tr = document.getElementById('rpTrouble');
+  tr.innerHTML = '';
+  if (trouble.length) {
+    const lab = document.createElement('div');
+    lab.className = 'eyebrow';
+    lab.style.textAlign = 'left';
+    lab.textContent = 'Worth another look';
+    const wrap = document.createElement('div');
+    wrap.className = 'chips';
+    wrap.style.justifyContent = 'flex-start';
+    trouble.slice(0, 12).forEach(function (t) {
+      const c = document.createElement('button');
+      c.className = 'chip';
+      c.textContent = t.it.t + (t.it.eg ? ' (' + t.it.eg + ')' : '');
+      c.addEventListener('click', function () { openWord(t.it); });
+      wrap.appendChild(c);
+    });
+    tr.appendChild(lab);
+    tr.appendChild(wrap);
+  }
+
+  const host = document.getElementById('rpSets');
+  host.innerHTML = '';
+  allSets().forEach(function (s) {
+    const total = s.items.length;
+    if (!total) return;
+    let known = 0, going = 0;
+    s.items.forEach(function (it) {
+      const b = rec(it).box;
+      if (b >= KNOWN_BOX) known++;
+      else if (b > 0) going++;
+    });
+    if (!known && !going) return;
+    const row = document.createElement('div');
+    row.className = 'repline';
+    row.innerHTML = '<span class="nm"></span><span class="bar">' +
+      '<i class="known" style="width:' + (100 * known / total) + '%"></i>' +
+      '<i class="going" style="width:' + (100 * going / total) + '%"></i></span>' +
+      '<span class="n">' + known + '/' + total + '</span>';
+    row.querySelector('.nm').textContent = s.name;
+    host.appendChild(row);
+  });
+  if (!host.children.length) {
+    host.innerHTML = '<p class="note" style="margin:0">Nothing practised yet — play a round and this fills in.</p>';
+  }
+  const w = Object.keys(S.write).filter(function (k) { return S.write[k].stars >= 2; }).length;
+  document.getElementById('rpNote').textContent =
+    'Green is confident, amber is under way. ' +
+    (w ? w + ' letters written neatly. ' : '') +
+    'Handy for the reading record: ' + d7 + ' day' + (d7 === 1 ? '' : 's') +
+    ' this week, ' + q7 + ' words practised.';
+}
+function renderAll() { renderHome(); renderGrown(); renderReport(); }
+
+/* ---------- word sheet ---------- */
+function openWord(item) {
+  const s = makeSheet();
+  const h = document.createElement('h3');
+  h.textContent = item.kind === 'sound' ? 'Sound' : 'Word';
+  const big = document.createElement('div');
+  big.className = 'bigword';
+  big.textContent = item.t + (item.eg ? '  ·  ' + item.eg : '');
+  const box = document.createElement('div');
+  box.className = 'mouthbox';
+  box.style.margin = '0 auto';
+  const strip = document.createElement('div');
+  strip.className = 'strip';
+  const ref = {};
+  const graphemes = item.kind === 'sound' ? [item.t] : splitWord(item.t);
+  graphemes.forEach(function (g) {
+    const b = document.createElement('button');
+    b.textContent = g;
+    b.addEventListener('click', function () {
+      strip.querySelectorAll('button').forEach(function (x) { x.classList.remove('lit'); });
+      b.classList.add('lit');
+      present(box, ref, soundItem(g), { soundOnly: true });
+    });
+    strip.appendChild(b);
+  });
+  const row = document.createElement('div');
+  row.className = 'row';
+  const again = document.createElement('button');
+  again.className = 'btn'; again.textContent = '▶ Say it';
+  again.addEventListener('click', function () {
+    strip.querySelectorAll('button').forEach(function (x) { x.classList.remove('lit'); });
+    present(box, ref, item);
+  });
+  const mic = document.createElement('button');
+  mic.className = 'btn go'; mic.textContent = '🎙 Record';
+  mic.addEventListener('click', function () {
+    s.close();
+    REC.setId = null;
+    REC.list = [item]; REC.i = 0;
+    document.getElementById('recSetName').textContent = 'Recording: ' + item.t;
+    drawRecTabs();
+    show('scRec');
+    setMode(REC.mode);
+  });
+  const vid = document.createElement('button');
+  vid.className = 'btn ghost'; vid.textContent = '🎥 Video';
+  vid.addEventListener('click', function () { pickVideo(item, function () { s.close(); }); });
+  row.appendChild(again); row.appendChild(mic); row.appendChild(vid);
+  if (hasOwn(item)) {
+    const rm = document.createElement('button');
+    rm.className = 'btn danger'; rm.textContent = 'Remove mine';
+    rm.addEventListener('click', function () { removeOwn(item); s.close(); });
+    row.appendChild(rm);
+  }
+  s.body.appendChild(h); s.body.appendChild(big); s.body.appendChild(box);
+  if (item.kind !== 'sound') s.body.appendChild(strip);
+
+  const sText = sentenceFor(item);
+  if (sText) {
+    const lab = document.createElement('div');
+    lab.className = 'eyebrow';
+    lab.style.textAlign = 'left';
+    lab.textContent = 'In a sentence';
+    const line = document.createElement('p');
+    line.className = 'storyline';
+    line.style.fontSize = '21px';
+    const target = (item.kind === 'sound' ? String(item.eg || '') : String(item.t)).toLowerCase();
+    sText.split(/(\s+)/).forEach(function (chunk) {
+      if (/^\s+$/.test(chunk) || !chunk.replace(/[^A-Za-z'’]/g, '')) {
+        line.appendChild(document.createTextNode(chunk));
+        return;
+      }
+      const bare = chunk.replace(/[^A-Za-z'’]/g, '');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = chunk;
+      if (bare.toLowerCase() !== target) b.style.color = 'var(--ink)';
+      b.addEventListener('click', function () {
+        present(box, ref, { t: bare, eg: '', kind: 'word' });
+      });
+      line.appendChild(b);
+    });
+    s.body.appendChild(lab);
+    s.body.appendChild(line);
+  }
+
+  s.body.appendChild(row);
+  present(box, ref, item);
+}
+
+function creditsSheet() {
+  const s = makeSheet();
+  const h = document.createElement('h3');
+  h.textContent = 'Free voice recordings';
+  const p = document.createElement('p');
+  p.className = 'note';
+  p.innerHTML = '105 of the words play a real human recording from Wikimedia Commons — the Lingua Libre ' +
+    'and Shtooka projects. Speakers vary, so a few accents differ from ours; anything you record yourself ' +
+    'always wins over these. Reused here under the licences below.';
+  s.body.appendChild(h); s.body.appendChild(p);
+  CREDITS.forEach(function (c) {
+    const d = document.createElement('div');
+    d.className = 'wtile';
+    d.innerHTML = '<span class="lab" style="font-family:var(--ui);font-size:13.5px">' + esc(c[0]) +
+      ' <small>' + esc(c[3]) + '</small></span><span class="mini lib">' + esc(c[1]) + '</span>' +
+      '<span class="mini">' + c[2] + '</span>';
+    s.body.appendChild(d);
+  });
+  const link = document.createElement('p');
+  link.className = 'note';
+  link.innerHTML = 'Full files and licence terms: commons.wikimedia.org · lingualibre.org · shtooka.net';
+  s.body.appendChild(link);
+}
+
+/* ==========================================================
+   WRITE IT — trace a letter with a finger.
+   Scored against the real glyph's own pixels, so any grapheme works
+   without hand-authored stroke paths.
+   ========================================================== */
+/* Plain-English formation reminders. Schools teach the stroke order; these
+   are the shape cues a parent can say out loud while he writes. */
+const FORM = {
+  a: 'round like a ball, then straight down', b: 'straight down, back up, round the belly',
+  c: 'start at the top, curve round and open', d: 'round like a ball, up tall, then down',
+  e: 'across, then round to the left', f: 'curve over the top, down, then cross it',
+  g: 'round like a ball, down and hook back', h: 'down tall, back up, over the bump',
+  i: 'straight down, then a dot on top', j: 'down and hook, then a dot on top',
+  k: 'down tall, then in and out like a kick', l: 'one straight line down',
+  m: 'down, up and over, up and over again', n: 'down, up and over the bump',
+  o: 'all the way round in a circle', p: 'straight down, back up, round the head',
+  q: 'round like a ball, down and flick out', r: 'straight down, back up, small curve',
+  s: 'curve back, then round like a snake', t: 'straight down, then cross it',
+  u: 'down, round the bottom, up and down', v: 'down to a point, then back up',
+  w: 'down, up, down, up', x: 'one slant across, then the other',
+  y: 'down to a point, up, then down and hook', z: 'across, slant back, across again'
+};
+const TR = { list: [], i: 0, masks: null, drawing: false, inked: false, stars: {} };
+function starRow(n) {
+  let out = '';
+  for (let i = 0; i < 3; i++) out += i < n ? '<span>★</span>' : '<span class="dim">★</span>';
+  return out;
+}
+
+function traceList() {
+  const set = getSet(S.selectedSet);
+  if (!set) return ['s', 'a', 't'];
+  const items = batchInfo(set).items;
+  const out = [], seen = {};
+  items.forEach(function (it) {
+    const gs = it.kind === 'sound' ? [it.t] : splitWord(it.t);
+    gs.forEach(function (g) { if (!seen[g]) { seen[g] = true; out.push(g); } });
+  });
+  return out.length ? out : ['s', 'a', 't'];
+}
+async function openTrace() {
+  TR.list = traceList();
+  TR.i = 0;
+  show('scTrace');
+  try { await document.fonts.load('700 200px Andika'); } catch (e) { /* fallback face */ }
+  traceStep();
+}
+function traceStep() {
+  const ch = TR.list[TR.i];
+  if (!ch) { renderAll(); show('scHome'); toast('Nice writing!'); return; }
+  document.getElementById('traceWord').innerHTML =
+    esc(ch) + '<small>' + esc(FORM[ch] || 'trace the shape') + '</small>';
+  document.getElementById('traceProg').textContent = (TR.i + 1) + ' of ' + TR.list.length;
+  document.getElementById('traceStars').innerHTML = '';
+  drawGuide(ch);
+  clearInk();
+  TR.masks = buildMasks(ch);
+}
+function glyphFont(ch, size) { return '700 ' + size + 'px Andika, "Comic Sans MS", sans-serif'; }
+function drawGuide(ch) {
+  const c = document.getElementById('traceGuide');
+  const x = c.getContext('2d');
+  const N = c.width;
+  x.clearRect(0, 0, N, N);
+  const cs = getComputedStyle(document.documentElement);
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.font = glyphFont(ch, ch.length > 1 ? N * 0.42 : N * 0.62);
+  x.fillStyle = (cs.getPropertyValue('--hair') || 'rgba(0,0,0,.14)').trim();
+  x.fillText(ch, N / 2, N / 2);
+  x.lineWidth = 3;
+  x.setLineDash([10, 12]);
+  x.strokeStyle = (cs.getPropertyValue('--ink-soft') || '#888').trim();
+  x.strokeText(ch, N / 2, N / 2);
+  x.setLineDash([]);
+}
+function buildMasks(ch) {
+  const N = 200;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const c = cv.getContext('2d');
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.font = glyphFont(ch, ch.length > 1 ? N * 0.42 : N * 0.62);
+  c.fillStyle = '#000';
+  c.strokeStyle = '#000';
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  c.clearRect(0, 0, N, N);
+  c.lineWidth = 3;
+  c.fillText(ch, N / 2, N / 2);
+  c.strokeText(ch, N / 2, N / 2);
+  const md = c.getImageData(0, 0, N, N).data;
+  c.clearRect(0, 0, N, N);
+  c.lineWidth = 30;                    /* fattened letter = the "close enough" zone */
+  c.strokeText(ch, N / 2, N / 2);
+  c.fillText(ch, N / 2, N / 2);
+  const zd = c.getImageData(0, 0, N, N).data;
+  const mask = new Uint8Array(N * N), zone = new Uint8Array(N * N);
+  let maskCount = 0;
+  for (let i = 0; i < N * N; i++) {
+    if (md[i * 4 + 3] > 60) { mask[i] = 1; maskCount++; }
+    if (zd[i * 4 + 3] > 40) zone[i] = 1;
+  }
+  return { N: N, mask: mask, zone: zone, maskCount: maskCount };
+}
+function clearInk() {
+  const c = document.getElementById('traceInk');
+  c.getContext('2d').clearRect(0, 0, c.width, c.height);
+  TR.inked = false;
+  document.getElementById('traceStars').innerHTML = '';
+}
+function inkPos(e) {
+  const c = document.getElementById('traceInk');
+  const r = c.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width * c.width, y: (e.clientY - r.top) / r.height * c.height };
+}
+function setupTraceCanvas() {
+  const c = document.getElementById('traceInk');
+  const x = c.getContext('2d');
+  x.lineWidth = 30;
+  x.lineCap = 'round';
+  x.lineJoin = 'round';
+  let last = null;
+  c.addEventListener('pointerdown', function (e) {
+    TR.drawing = true;
+    TR.inked = true;
+    last = inkPos(e);
+    try { c.setPointerCapture(e.pointerId); } catch (err) { /* older browser */ }
+    x.strokeStyle = (getComputedStyle(document.documentElement).getPropertyValue('--c4') || '#4A7DD6').trim();
+    x.beginPath();
+    x.moveTo(last.x, last.y);
+    x.lineTo(last.x + 0.1, last.y + 0.1);
+    x.stroke();
+    e.preventDefault();
+  });
+  c.addEventListener('pointermove', function (e) {
+    if (!TR.drawing) return;
+    const p = inkPos(e);
+    x.beginPath();
+    x.moveTo(last.x, last.y);
+    x.lineTo(p.x, p.y);
+    x.stroke();
+    last = p;
+    e.preventDefault();
+  });
+  const stop = function () { TR.drawing = false; };
+  c.addEventListener('pointerup', stop);
+  c.addEventListener('pointercancel', stop);
+  c.addEventListener('pointerleave', stop);
+}
+function scoreTrace() {
+  if (!TR.masks) return null;
+  const N = TR.masks.N;
+  const t = document.createElement('canvas');
+  t.width = t.height = N;
+  const tc = t.getContext('2d');
+  tc.drawImage(document.getElementById('traceInk'), 0, 0, N, N);
+  const d = tc.getImageData(0, 0, N, N).data;
+  let covered = 0, inked = 0, inZone = 0;
+  for (let i = 0; i < N * N; i++) {
+    if (d[i * 4 + 3] > 40) {
+      inked++;
+      if (TR.masks.zone[i]) inZone++;
+      if (TR.masks.mask[i]) covered++;
+    }
+  }
+  return {
+    coverage: TR.masks.maskCount ? covered / TR.masks.maskCount : 0,
+    neat: inked ? inZone / inked : 0,
+    inked: inked
+  };
+}
+function checkTrace() {
+  const ch = TR.list[TR.i];
+  const s = scoreTrace();
+  const out = document.getElementById('traceStars');
+  if (!s || s.inked < 150) {
+    out.textContent = '';
+    toast('Trace over the dotted letter first');
+    return;
+  }
+  let stars = 0;
+  if (s.coverage >= 0.40) stars = 1;
+  if (s.coverage >= 0.60 && s.neat >= 0.70) stars = 2;
+  if (s.coverage >= 0.74 && s.neat >= 0.84) stars = 3;
+  out.innerHTML = starRow(stars);
+  if (stars >= 2) { SFX.win(); splatAt(document.querySelector('.tracebox')); }
+  else SFX.nope();
+  const best = Math.max(stars, (S.write[ch] && S.write[ch].stars) || 0);
+  S.write[ch] = { stars: best, at: Date.now() };
+  saveDoc('write/' + ch.replace(/[^a-z0-9]/g, '_'), S.write[ch]);
+  lsWrite();
+  if (stars >= 2) setTimeout(function () { TR.i++; traceStep(); }, 1200);
+}
+
+/* ==========================================================
+   STICKERS — one per finished session
+   ========================================================== */
+function awardSticker(acc) {
+  const list = (S.album.list || []).slice();
+  const n = acc >= 100 ? 2 : 1;
+  for (let i = 0; i < n; i++) {
+    list.push({ seed: Math.floor(Math.random() * 99999), at: Date.now(), acc: acc });
+  }
+  S.album = { list: list.slice(-240) };
+  saveDoc('stickers/album', S.album);
+  lsWrite();
+  return list.slice(-n);
+}
+function renderAlbum() {
+  const grid = document.getElementById('albumGrid');
+  const list = (S.album.list || []).slice().reverse();
+  document.getElementById('albumCount').textContent =
+    list.length ? list.length + ' stickers' : 'Sticker book';
+  grid.innerHTML = '';
+  list.forEach(function (s) {
+    const b = document.createElement('button');
+    b.className = 'sticker';
+    b.innerHTML = monsterSVG(s.seed, '', MCOL[s.seed % MCOL.length]);
+    b.addEventListener('click', function () { SFX.splat(); splatAt(b); });
+    grid.appendChild(b);
+  });
+  document.getElementById('albumNote').textContent = list.length
+    ? 'One sticker for every finished round — two if he got them all first time.'
+    : 'Finish a round to win your first sticker.';
+}
+
+/* ==========================================================
+   STORIES — decodable, about whatever he picks
+   ========================================================== */
+const TOPICS = [
+  ['🦖', 'dinosaurs'], ['🚀', 'space'], ['🐶', 'dogs'], ['⚽', 'football'],
+  ['🏴‍☠️', 'pirates'], ['👹', 'monsters'], ['🚜', 'diggers'], ['🦈', 'sharks'],
+  ['🐉', 'dragons'], ['🧁', 'cakes'], ['🚂', 'trains'], ['🌧', 'muddy puddles']
+];
+const ST = { picked: {}, story: null, i: 0 };
+
+const STORY_PROMPT =
+  'Write a very short story for a 4-year-old in Reception in England who is learning phonics.\n' +
+  'He chose the story to be about: {TOPIC}\n' +
+  'Words he is practising this week (work in as many as fit naturally, at least four of them): {WORDS}\n\n' +
+  'Hard rules:\n' +
+  '- 5 to 7 sentences. Each sentence 3 to 8 words. Simple full stops, question marks or exclamation marks.\n' +
+  '- Every word must be decodable with Phase 2 and Phase 3 letter sounds only: ' +
+  's a t p i n m d g o c k ck e u r h b f l ff ll ss j v w x y z zz qu ch sh th ng nk ' +
+  'ai ee igh oa oo ar or ur ow oi ear air er. No split digraphs, no Phase 5 spellings.\n' +
+  '- These tricky words are also allowed: the, I, is, put, pull, full, as, and, has, his, her, go, no, ' +
+  'to, into, she, push, he, of, we, me, be, was, you, they, my, by, all, are, sure, pure.\n' +
+  '- The topic itself may need a hard word (for example "dinosaur"). Use at most two such words, ' +
+  'and list every one of them in "helpers" so a grown-up reads them aloud.\n' +
+  '- Make it exciting and a bit silly — something happens, and it ends happily.\n' +
+  '- Title: 2 to 4 words.\n\n' +
+  'Return JSON only: {"title":"","lines":["sentence one","sentence two"],"helpers":["dinosaur"]}';
+
+function openAsk() {
+  ST.picked = {};
+  document.getElementById('askText').value = '';
+  const grid = document.getElementById('topicGrid');
+  grid.innerHTML = '';
+  TOPICS.forEach(function (t) {
+    const b = document.createElement('button');
+    b.className = 'topic';
+    b.innerHTML = '<span>' + t[0] + '</span>';
+    b.appendChild(document.createTextNode(t[1]));
+    b.addEventListener('click', function () {
+      if (ST.picked[t[1]]) delete ST.picked[t[1]]; else ST.picked[t[1]] = true;
+      b.classList.toggle('on', !!ST.picked[t[1]]);
+      SFX.splat();
+    });
+    grid.appendChild(b);
+  });
+  document.getElementById('askNote').textContent =
+    'Pick what he fancies and the story is ready straight away.';
+  document.getElementById('askGo').disabled = false;
+  show('scAsk');
+}
+function askTopic() {
+  const typed = document.getElementById('askText').value.trim();
+  const picks = Object.keys(ST.picked);
+  return [typed, picks.join(' and ')].filter(Boolean).join(', ') || 'a funny little adventure';
+}
+/* Ten ready-made decodable stories — Phase 2/3 sounds plus the Reception
+   tricky words. No internet, no account, no waiting. */
+const STORYBOOK = [
+  { topics:['dinosaurs'], title:'The Bed Dinosaur', helpers:['dinosaur'], lines:[
+    'I had a pet dinosaur.','He was big and red.','He sat on my bed!',
+    'The bed went bang.','Dad ran in to look.','No dinosaurs on the bed!'] },
+  { topics:['space'], title:'Up to the Moon', helpers:['rocket'], lines:[
+    'We got in a red rocket.','Up and up it went.','We went to the moon.',
+    'It was dark and cold.','I had a nap in my kit.','Then we did zoom back.'] },
+  { topics:['dogs'], title:'The Mud Dog', helpers:[], lines:[
+    'My dog ran in the mud.','He was wet and black.','He had a big grin.',
+    'Mum had to get a cloth.','Now my dog is soft.'] },
+  { topics:['football'], title:'The Big Kick', helpers:[], lines:[
+    'I can kick the ball.','It went up high.','It went in the net!',
+    'All my pals did yell.','We had a big win.'] },
+  { topics:['pirates'], title:'The Red Ship', helpers:['pirate'], lines:[
+    'A pirate had a red ship.','He had a big hat.','He did look for gold.',
+    'It was in a chest.','The chest was full of it!'] },
+  { topics:['monsters'], title:'The Sock Monster', helpers:['monster'], lines:[
+    'A monster sat in my sock.','He was soft and green.','He had six legs.',
+    'He went munch, munch, munch.','Now I had no socks!'] },
+  { topics:['diggers'], title:'The Big Digger', helpers:['digger'], lines:[
+    'The digger digs a big pit.','It got stuck in the mud.','A man did pull.',
+    'Pull and pull and pull!','Out it went with a pop.'] },
+  { topics:['sharks'], title:'The Shark and the Fish', helpers:[], lines:[
+    'A shark went for a swim.','He had sharp teeth.','A fish did hide in the sand.',
+    'The shark did not see him.','The fish had a big grin.'] },
+  { topics:['dragons'], title:'The Sad Dragon', helpers:['dragon'], lines:[
+    'A dragon sat on a hill.','He did huff and puff.','His den was dark.',
+    'He had a chest of gold.','But he had no pals.','So I sat with him.'] },
+  { topics:['cakes'], title:'Jam Buns', helpers:[], lines:[
+    'Mum and I did cook buns.','We put jam in them.','The buns got hot.',
+    'I had six of them!','Mum got the last bun.'] },
+  { topics:['trains'], title:'The Fast Train', helpers:['train'], lines:[
+    'The train went chuff, chuff.','It went fast on the track.','We sat and had a snack.',
+    'Then it did stop.','We got off at the park.'] },
+  { topics:['muddy puddles'], title:'The Big Puddle', helpers:['puddle'], lines:[
+    'I did jump in a puddle.','Splash went the mud!','It got on my top.',
+    'It got on my legs.','Mum did not grin.'] }
+];
+function makeStory() {
+  const want = (askTopic() + ' ' + Object.keys(ST.picked).join(' ')).toLowerCase();
+  let best = null, bestScore = -1;
+  STORYBOOK.forEach(function (st) {
+    let score = Math.random() * 0.4;          /* break ties differently each time */
+    st.topics.forEach(function (t) {
+      if (want.indexOf(t) > -1) score += 10;
+      t.split(' ').forEach(function (w) { if (w.length > 3 && want.indexOf(w) > -1) score += 4; });
+    });
+    const told = (S.stories[st.title] && S.stories[st.title].at) || 0;
+    if (told) score -= 1;                      /* prefer one he has not had lately */
+    if (score > bestScore) { bestScore = score; best = st; }
+  });
+  if (!best) return;
+  const story = { title: best.title, lines: best.lines.slice(), helpers: best.helpers.slice(),
+                  topic: best.topics[0], at: Date.now() };
+  S.stories[best.title] = story;
+  saveDoc('stories/' + best.title.replace(/[^A-Za-z0-9]/g, '_'), story);
+  lsWrite();
+  openStory(story);
+  renderHome();
+}
+
+
+function openStory(story) {
+  ST.story = story;
+  ST.i = 0;
+  document.getElementById('storyTitle').textContent = story.title;
+  show('scStory');
+  drawLine();
+}
+function drawLine() {
+  const st = ST.story;
+  if (!st) return;
+  const pips = document.getElementById('storyPips');
+  pips.innerHTML = '';
+  st.lines.forEach(function (_, i) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < ST.i ? ' done' : i === ST.i ? ' now' : '');
+    pips.appendChild(p);
+  });
+  const host = document.getElementById('storyLine');
+  host.innerHTML = '';
+  const helpers = {};
+  (st.helpers || []).forEach(function (h) { helpers[h] = true; });
+  const parts = String(st.lines[ST.i] || '').split(/(\s+)/);
+  parts.forEach(function (chunk) {
+    if (/^\s+$/.test(chunk)) { host.appendChild(document.createTextNode(chunk)); return; }
+    const bare = chunk.replace(/[^A-Za-z'’]/g, '');
+    if (!bare) { host.appendChild(document.createTextNode(chunk)); return; }
+    if (helpers[bare.toLowerCase()]) {
+      const sp = document.createElement('span');
+      sp.className = 'helper';
+      sp.textContent = chunk;
+      host.appendChild(sp);
+      return;
+    }
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = chunk;
+    b.addEventListener('click', async function () {
+      const item = { t: bare, eg: '', kind: 'word' };
+      const own = await ownRecording(item);
+      if (own && own.type === 'audio') { playOwn(own.url); return; }
+      const lib = libWordFor(item);
+      if (lib) playSprite(lib);
+      else robot(bare, .75);
+    });
+    host.appendChild(b);
+  });
+  document.getElementById('storyPrev').disabled = ST.i === 0;
+  document.getElementById('storyNext').textContent =
+    ST.i >= st.lines.length - 1 ? 'The End ★' : 'Next ▸';
+}
+function storyStep(d) {
+  const st = ST.story;
+  if (!st) return;
+  const last = ST.i >= st.lines.length - 1;
+  if (d > 0 && last) {
+    SFX.win();
+    const card = document.querySelector('.storycard');
+    if (card) splatAt(card);
+    toast('The End — nice reading!');
+    return;
+  }
+  ST.i = Math.max(0, Math.min(st.lines.length - 1, ST.i + d));
+  drawLine();
+}
+function renderStories() {
+  const el = document.getElementById('storyList');
+  if (!el) return;
+  const ids = Object.keys(S.stories).sort(function (a, b) {
+    return (S.stories[b].at || 0) - (S.stories[a].at || 0);
+  }).slice(0, 8);
+  el.innerHTML = '';
+  ids.forEach(function (id) {
+    const st = S.stories[id];
+    const row = document.createElement('button');
+    row.className = 'setrow';
+    row.innerHTML = '<span class="spine"></span><span class="meta"><b></b><small></small></span>';
+    row.querySelector('.spine').style.background = 'var(' + MCOL[st.title.length % MCOL.length] + ')';
+    row.querySelector('b').textContent = st.title;
+    row.querySelector('small').textContent = st.lines.length + ' lines · ' + (st.topic || '');
+    row.addEventListener('click', function () { openStory(st); });
+    el.appendChild(row);
+  });
+}
+
+/* ==========================================================
+   PHOTOGRAPH THE BOOK — read real pages, build a set from them
+   ========================================================== */
+function downscale(file, maxPx) {
+  return new Promise(function (res) {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = function () {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function (b) { res(b || file); }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); res(file); };
+    img.src = url;
+  });
+}
+
+
+async function photographBook() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.multiple = true;
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.addEventListener('change', async function () {
+    const files = Array.prototype.slice.call(input.files || []);
+    input.remove();
+    if (files.length) await readPages(files);
+  });
+  input.click();
+}
+
+/* Tesseract reads the pages in the browser — nothing leaves the phone. The
+   language data (~4MB) downloads once on first use, then is cached. */
+let ocrWorker = null;
+async function getOCR(onStatus) {
+  if (ocrWorker) return ocrWorker;
+  if (typeof Tesseract === 'undefined') {
+    await new Promise(function (res, rej) {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      sc.onload = res;
+      sc.onerror = rej;
+      document.head.appendChild(sc);
+    });
+  }
+  onStatus('Getting the reader ready (first time only)...');
+  ocrWorker = await Tesseract.createWorker('eng');
+  return ocrWorker;
+}
+
+
+
+async function readPages(files) {
+  const status = document.getElementById('photoStatus');
+  const btn = document.getElementById('photoPick');
+  const say = function (t) { status.textContent = t; };
+  btn.disabled = true;
+  btn.classList.add('thinking');
+  let worker;
+  try {
+    worker = await getOCR(say);
+  } catch (e) {
+    say('Could not load the page reader — you need to be online the first time you use it.');
+    btn.disabled = false; btn.classList.remove('thinking');
+    return;
+  }
+  const pages = [];
+  for (let i = 0; i < files.length; i++) {
+    say('Reading page ' + (i + 1) + ' of ' + files.length + '...');
+    const blob = await downscale(files[i], 1600);
+    let text = '';
+    try {
+      const r = await worker.recognize(blob);
+      text = (r && r.data && r.data.text) || '';
+    } catch (e) { text = ''; }
+    pages.push({ blob: blob, lines: linesFrom(text) });
+  }
+  btn.disabled = false;
+  btn.classList.remove('thinking');
+  say('');
+  if (!pages.some(function (pg) { return pg.lines.length; })) {
+    toast('No words found — try a closer, brighter photo');
+    return;
+  }
+  pageSheet('', pages, wordsFrom(pages));
+}
+
+/* OCR output is messy: keep lines that read like real sentences. */
+function linesFrom(text) {
+  return String(text)
+    .replace(/[|_~^`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map(function (l) { return l.trim(); })
+    .filter(function (l) {
+      if (l.length < 4 || l.length > 160) return false;
+      const letters = (l.match(/[A-Za-z]/g) || []).length;
+      return letters >= 4 && letters / l.length > 0.6 && /\s/.test(l);
+    })
+    .slice(0, 8);
+}
+function wordsFrom(pages) {
+  const TRICKY = ('the i is put pull full as and has his her go no to into she push he of we me be ' +
+    'was you they my by all are sure pure').split(' ');
+  const counts = {};
+  pages.forEach(function (pg) {
+    pg.lines.forEach(function (l) {
+      (l.match(/[A-Za-z']+/g) || []).forEach(function (w) {
+        const c = w.replace(/^'+|'+$/g, '').toLowerCase();
+        if (c.length < 2 && c !== 'i' && c !== 'a') return;
+        if (c.length > 9) return;
+        counts[c] = (counts[c] || 0) + 1;
+      });
+    });
+  });
+  const out = {};
+  Object.keys(counts)
+    .sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })
+    .slice(0, 22)
+    .forEach(function (w) {
+      out[w === 'i' ? 'I' : w] = TRICKY.indexOf(w) > -1 ? 'tricky' : 'word';
+    });
+  return out;
+}
+
+
+
+function pageSheet(title, pages, wordMap) {
+  const s = makeSheet();
+  const h = document.createElement('h3');
+  h.textContent = title || 'This book';
+  const p = document.createElement('p');
+  p.className = 'note';
+  const nLines = pages.reduce(function (a, b) { return a + b.lines.length; }, 0);
+  p.textContent = pages.length + ' page' + (pages.length > 1 ? 's' : '') + ', ' + nLines +
+    ' sentence' + (nLines > 1 ? 's' : '') + ' read. Check the words below and untick anything wrong — ' +
+    'the sentences from the book become his example sentences.';
+  s.body.appendChild(h);
+  s.body.appendChild(p);
+
+  const thumbs = document.createElement('div');
+  thumbs.className = 'thumbs';
+  pages.forEach(function (pg) {
+    const im = document.createElement('img');
+    im.src = URL.createObjectURL(pg.blob);
+    im.alt = '';
+    thumbs.appendChild(im);
+  });
+  s.body.appendChild(thumbs);
+
+  const preview = document.createElement('p');
+  preview.className = 'note';
+  preview.style.fontFamily = 'var(--letter)';
+  preview.textContent = pages.map(function (pg) { return pg.lines.join(' '); })
+    .filter(Boolean).join(' ').slice(0, 260);
+  s.body.appendChild(preview);
+
+  const chosen = Object.assign({}, wordMap);
+  const lab = document.createElement('div');
+  lab.className = 'eyebrow';
+  lab.style.textAlign = 'left';
+  lab.textContent = 'Words to practise';
+  const wrap = document.createElement('div');
+  wrap.className = 'chips';
+  wrap.style.justifyContent = 'flex-start';
+  Object.keys(wordMap).forEach(function (w) {
+    const c = document.createElement('button');
+    c.className = 'chip done';
+    c.textContent = w;
+    c.addEventListener('click', function () {
+      if (chosen[w]) { delete chosen[w]; c.classList.remove('done'); c.style.opacity = '.4'; }
+      else { chosen[w] = wordMap[w]; c.classList.add('done'); c.style.opacity = '1'; }
+    });
+    wrap.appendChild(c);
+  });
+  s.body.appendChild(lab);
+  s.body.appendChild(wrap);
+
+  const add = document.createElement('button');
+  add.className = 'btn go';
+  add.textContent = 'Add as this week\'s book';
+  add.addEventListener('click', async function () {
+    add.disabled = true;
+    add.textContent = 'Saving…';
+    await saveBook(title, pages, chosen);
+    s.close();
+  });
+  s.body.appendChild(add);
+}
+
+async function saveBook(title, pages, chosen) {
+  const items = Object.keys(chosen).map(function (t) { return { t: t, eg: '', kind: chosen[t] }; });
+  if (!items.length) { toast('Pick at least one word'); return; }
+  const id = 'u_' + Date.now().toString(36);
+  const name = title || 'This week\'s book';
+
+  /* the book's own sentences become the example sentences */
+  const all = [];
+  pages.forEach(function (pg) { pg.lines.forEach(function (l) { all.push(l); }); });
+  items.forEach(function (it) {
+    const hit = all.find(function (l) {
+      return new RegExp('(^|[^A-Za-z])' + it.t + '([^A-Za-z]|$)', 'i').test(l);
+    });
+    if (!hit) return;
+    const body = { text: hit, src: 'book', at: Date.now() };
+    S.sent[keyOf(it)] = body;
+    saveDoc('sent/' + keyOf(it), body);
+  });
+
+  /* page photos live in this phone's own storage; the list keeps their order */
+  const saved = [];
+  for (let i = 0; i < pages.length; i++) {
+    const key = 'pg:' + id + ':' + i;
+    const ok = await idbPut(key, pages[i].blob);
+    saved.push({ pageKey: ok ? key : null, lines: pages[i].lines });
+  }
+  S.books[id] = { pages: saved, title: name, at: Date.now() };
+  await saveDoc('books/' + id, S.books[id]);
+
+  S.sets[id] = { name: name, kind: 'word', items: items, phase: 'From the book',
+                 createdAt: Date.now(), hasPages: true };
+  await saveDoc('sets/' + id, S.sets[id]);
+  S.selectedSet = id;
+  mediaTab = id;
+  lsWrite();
+  renderAll();
+  show('scHome');
+  toast(items.length + ' words and ' + saved.length + ' pages saved');
+}
+
+/* ---------- reading the real pages ---------- */
+const BK = { id: null, i: 0 };
+function openBook(setId) {
+  const b = S.books[setId];
+  if (!b || !b.pages.length) return;
+  BK.id = setId;
+  BK.i = 0;
+  document.getElementById('bookTitle').textContent = b.title || 'The book';
+  show('scBook');
+  drawPage();
+}
+function drawPage() {
+  const b = S.books[BK.id];
+  if (!b) return;
+  const pg = b.pages[BK.i];
+  const pips = document.getElementById('bookPips');
+  pips.innerHTML = '';
+  b.pages.forEach(function (_, i) {
+    const d = document.createElement('div');
+    d.className = 'pip' + (i < BK.i ? ' done' : i === BK.i ? ' now' : '');
+    pips.appendChild(d);
+  });
+  const img = document.getElementById('bookPage');
+  const frame = document.querySelector('.pagewrap');
+  if (pg.pageKey) {
+    frame.hidden = false;
+    idbGet(pg.pageKey).then(function (blob) {
+      if (blob) { img.src = URL.createObjectURL(blob); img.hidden = false; }
+      else { frame.hidden = true; }
+    });
+  } else {
+    img.removeAttribute('src');
+    frame.hidden = true;
+  }
+
+  const host = document.getElementById('bookLines');
+  host.innerHTML = '';
+  const text = (pg.lines || []).join(' ');
+  if (!text) {
+    host.textContent = 'No words on this page.';
+  } else {
+    text.split(/(\s+)/).forEach(function (chunk) {
+      const bare = chunk.replace(/[^A-Za-z'’]/g, '');
+      if (!bare) { host.appendChild(document.createTextNode(chunk)); return; }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = chunk;
+      btn.addEventListener('click', async function () {
+        const item = { t: bare, eg: '', kind: 'word' };
+        const own = await ownRecording(item);
+        if (own && own.type === 'audio') { playOwn(own.url); return; }
+        const lib = libWordFor(item);
+        if (lib) playSprite(lib); else robot(bare, .75);
+      });
+      host.appendChild(btn);
+    });
+  }
+  document.getElementById('bookPrev').disabled = BK.i === 0;
+  document.getElementById('bookNext').textContent =
+    BK.i >= b.pages.length - 1 ? 'All done ★' : 'Next page ▸';
+}
+function bookStep(d) {
+  const b = S.books[BK.id];
+  if (!b) return;
+  if (d > 0 && BK.i >= b.pages.length - 1) {
+    SFX.win();
+    splatAt(document.querySelector('.pagewrap'));
+    toast('You read the whole book!');
+    return;
+  }
+  BK.i = Math.max(0, Math.min(b.pages.length - 1, BK.i + d));
+  drawPage();
+}
+
+/* ---------- find a book's words ---------- */
+function listen(onText, onDone) {
+  const done = onDone || function () {};
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('This browser can’t listen — type it instead'); done(); return; }
+  let r;
+  try { r = new SR(); } catch (e) { toast('Speech input unavailable'); done(); return; }
+  r.lang = 'en-GB';
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  r.onresult = function (e) { onText(e.results[0][0].transcript); };
+  r.onerror = function () { toast('Didn’t catch that — try again or type it'); };
+  r.onend = done;
+  try { r.start(); } catch (e) { done(); }
+}
+
+
+
+
+function bookSheet(title, data) {
+  const s = makeSheet();
+  const h = document.createElement('h3');
+  h.textContent = data.title || title;
+  const meta = document.createElement('p');
+  meta.className = 'note';
+  const conf = String(data.confidence || 'low').toLowerCase();
+  meta.innerHTML =
+    (data.series ? '<b>' + esc(data.series) + '</b> · ' : '') + esc(data.phase || 'Reception') +
+    (data.focus && data.focus.length ? ' · focus ' + esc(data.focus.join(' ')) : '') +
+    '<br><b>' + (conf === 'high' ? 'Fairly confident' : conf === 'medium' ? 'A reasonable guess' : 'A guess') +
+    '.</b> ' + esc(data.note || '') +
+    ' Check these against the actual book and untick anything wrong — nothing saves until you tap Add.';
+  s.body.appendChild(h);
+  s.body.appendChild(meta);
+
+  const chosen = {};
+  function group(label, words, kind) {
+    if (!words || !words.length) return;
+    const lab = document.createElement('div');
+    lab.className = 'eyebrow';
+    lab.style.textAlign = 'left';
+    lab.textContent = label;
+    const wrap = document.createElement('div');
+    wrap.className = 'chips';
+    wrap.style.justifyContent = 'flex-start';
+    words.forEach(function (w) {
+      const clean = String(w).trim().replace(/[^A-Za-z'’-]/g, '');
+      if (!clean) return;
+      const disp = clean === 'I' ? 'I' : clean.toLowerCase();
+      chosen[disp] = kind;
+      const c = document.createElement('button');
+      c.className = 'chip done';
+      c.textContent = disp;
+      c.addEventListener('click', function () {
+        if (chosen[disp]) { delete chosen[disp]; c.classList.remove('done'); c.style.opacity = '.4'; }
+        else { chosen[disp] = kind; c.classList.add('done'); c.style.opacity = '1'; }
+      });
+      wrap.appendChild(c);
+    });
+    s.body.appendChild(lab);
+    s.body.appendChild(wrap);
+  }
+  group('Decodable words', data.words, 'word');
+  group('Tricky words', data.tricky, 'tricky');
+
+  const add = document.createElement('button');
+  add.className = 'btn go';
+  add.textContent = 'Add as this week’s book';
+  add.addEventListener('click', function () {
+    const items = Object.keys(chosen).map(function (t) { return { t: t, eg: '', kind: chosen[t] }; });
+    if (!items.length) { toast('Pick at least one word'); return; }
+    const sents = data.sentences || {};
+    items.forEach(function (it) {
+      const raw = sents[it.t] || sents[it.t.toLowerCase()];
+      if (!raw) return;
+      const body = { text: String(raw).slice(0, 120), src: 'ai', at: Date.now() };
+      S.sent[keyOf(it)] = body;
+      saveDoc('sent/' + keyOf(it), body);
+    });
+    const id = 'u_' + Date.now().toString(36);
+    S.sets[id] = { name: data.title || title, kind: 'word', items: items,
+                   phase: (data.series ? data.series + ' · ' : '') + (data.phase || 'Reading book'),
+                   createdAt: Date.now() };
+    saveDoc('sets/' + id, S.sets[id]).then(function () {
+      S.selectedSet = id;
+      mediaTab = id;
+      lsWrite();
+      renderAll();
+      s.close();
+      show('scHome');
+      toast(items.length + ' words ready — first batch of ' + Math.min(items.length, S.settings.batchSize || 6));
+    });
+  });
+  s.body.appendChild(add);
+}
+
+/* ---------- sheets & toast ---------- */
+function makeSheet() {
+  const bg = document.createElement('div');
+  bg.className = 'sheet-bg';
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  bg.appendChild(sheet);
+  function close() {
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    if (libAudio) libAudio.pause();
+    if (ownAudio) ownAudio.pause();
+    bg.remove();
+  }
+  bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
+  document.body.appendChild(bg);
+  const done = document.createElement('button');
+  done.className = 'btn ghost'; done.textContent = 'Close';
+  done.addEventListener('click', close);
+  setTimeout(function () { sheet.appendChild(done); }, 0);
+  return { body: sheet, close: close };
+}
+function confirmSheet(title, note, onYes) {
+  const s = makeSheet();
+  const h = document.createElement('h3'); h.textContent = title;
+  const p = document.createElement('p'); p.className = 'note'; p.textContent = note;
+  const row = document.createElement('div'); row.className = 'row';
+  const yes = document.createElement('button');
+  yes.className = 'btn danger'; yes.textContent = 'Yes, delete';
+  yes.addEventListener('click', function () { s.close(); onYes(); });
+  row.appendChild(yes);
+  s.body.appendChild(h); s.body.appendChild(p); s.body.appendChild(row);
+}
+let toastTimer = null;
+function toast(msg) {
+  const o = document.querySelector('.toast');
+  if (o) o.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.remove(); }, 2400);
+}
+
+/* ---------- backup: the only copy lives on this phone ---------- */
+function backupNow() {
+  const blob = new Blob([JSON.stringify({
+    v: 1, at: new Date().toISOString(),
+    sets: S.sets, progress: S.progress, sent: S.sent, stories: S.stories,
+    write: S.write, album: S.album, stats: S.stats, books: S.books,
+    settings: S.settings
+  }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jelly-splat-backup-' + today() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('Backup saved to your downloads');
+}
+function restoreNow() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json,.json';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.addEventListener('change', function () {
+    const f = input.files && input.files[0];
+    input.remove();
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = function () {
+      let d = null;
+      try { d = JSON.parse(String(r.result)); } catch (e) { d = null; }
+      if (!d || !d.progress) { toast('That is not a Jelly Splat backup'); return; }
+      confirmSheet('Restore this backup?',
+        'It replaces the words and progress on this phone. Recordings and page photos ' +
+        'are not in the backup — those stay on the phone they were made on.',
+        function () {
+          ['sets','progress','sent','stories','write','album','stats','books','settings']
+            .forEach(function (k) { if (d[k]) S[k] = d[k]; });
+          lsWrite();
+          renderAll();
+          toast('Restored');
+        });
+    };
+    r.readAsText(f);
+  });
+  input.click();
+}
+
+/* ---------- installable app ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* file:// or no https */ });
+  });
+}
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  installPrompt = e;
+  const b = document.getElementById('optInstall');
+  if (b) b.hidden = false;
+});
+
+/* ---------- wiring ---------- */
+document.getElementById('markSlot').innerHTML = monsterSVG(7, '', '--c1');
+document.addEventListener('pointerdown', function primeAudio() {
+  document.removeEventListener('pointerdown', primeAudio);
+  unlockAudio();
+  try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* no audio */ }
+}, { once: true });
+document.getElementById('startBtn').addEventListener('click', function () {
+  if (actx && actx.state === 'suspended') actx.resume();
+  unlockAudio();
+  startGame(S.selectedSet);
+});
+document.getElementById('navStop').addEventListener('click', function () {
+  G.q = null;
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (libAudio) libAudio.pause();
+  show('scHome');
+});
+/* Hold to open the grown-up side, so he can't wander into settings mid-round.
+   Leaving it (the "Done" state) is a normal tap. */
+(function () {
+  const btn = document.getElementById('navGrown');
+  let timer = null, held = false;
+  function openGrown() {
+    renderGrown();
+    renderReport();
+    show('scGrown');
+    commitGrades();   /* in case the grading screen was left without saving */
+  }
+  btn.addEventListener('pointerdown', function () {
+    if (!document.getElementById('scGrown').hidden) return;
+    held = false;
+    timer = setTimeout(function () { held = true; openGrown(); }, 550);
+  });
+  const cancel = function () { clearTimeout(timer); };
+  btn.addEventListener('pointerup', cancel);
+  btn.addEventListener('pointerleave', cancel);
+  btn.addEventListener('pointercancel', cancel);
+  btn.addEventListener('click', function () {
+    /* The hold already opened it; this is the click that follows the same
+       press, so it must not be read as "Done" and close it again. */
+    if (held) { held = false; return; }
+    if (!document.getElementById('scGrown').hidden) { renderHome(); show('scHome'); return; }
+    toast('Hold the button to open the grown-up bit');
+  });
+})();
+document.getElementById('optInstall').addEventListener('click', async function () {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  try { await installPrompt.userChoice; } catch (e) { /* dismissed */ }
+  installPrompt = null;
+  this.hidden = true;
+});
+document.getElementById('optBackup').addEventListener('click', backupNow);
+document.getElementById('optRestore').addEventListener('click', restoreNow);
+document.getElementById('photoPick').addEventListener('click', photographBook);
+document.getElementById('bookBtn').addEventListener('click', function () { openBook(S.selectedSet); });
+document.getElementById('bookNext').addEventListener('click', function () { bookStep(1); });
+document.getElementById('bookPrev').addEventListener('click', function () { bookStep(-1); });
+document.getElementById('bookDone').addEventListener('click', function () { show('scHome'); });
+document.getElementById('traceBtn').addEventListener('click', openTrace);
+document.getElementById('albumBtn').addEventListener('click', function () {
+  renderAlbum();
+  show('scAlbum');
+});
+document.getElementById('albumBack').addEventListener('click', function () { show('scHome'); });
+document.getElementById('traceClear').addEventListener('click', clearInk);
+document.getElementById('traceCheck').addEventListener('click', checkTrace);
+document.getElementById('traceNext').addEventListener('click', function () { TR.i++; traceStep(); });
+document.getElementById('traceDone').addEventListener('click', function () {
+  renderAll();
+  show('scHome');
+});
+setupTraceCanvas();
+document.getElementById('hearBtn').addEventListener('click', hearPrompt);
+document.getElementById('recAll').addEventListener('click', function () { startRecorder(mediaTab); });
+document.getElementById('showCredits').addEventListener('click', creditsSheet);
+document.getElementById('stretchBtn').addEventListener('click', function () {
+  if (actx && actx.state === 'suspended') actx.resume();
+  unlockAudio();
+  startStretch();
+});
+document.getElementById('makeStory').addEventListener('click', openAsk);
+document.getElementById('askBack').addEventListener('click', function () { show('scHome'); });
+document.getElementById('askGo').addEventListener('click', makeStory);
+document.getElementById('sayBtn').addEventListener('click', function () {
+  const btn = this;
+  btn.classList.add('live');
+  btn.textContent = 'Listening…';
+  listen(function (text) {
+    document.getElementById('askText').value = text;
+    toast('“' + text + '” — tap Make my story');
+  }, function () {
+    btn.classList.remove('live');
+    btn.textContent = '🎤 Say it';
+  });
+});
+document.getElementById('storyNext').addEventListener('click', function () { storyStep(1); });
+document.getElementById('storyPrev').addEventListener('click', function () { storyStep(-1); });
+document.getElementById('storyAgain').addEventListener('click', function () { ST.i = 0; drawLine(); });
+document.getElementById('storyNew').addEventListener('click', openAsk);
+document.getElementById('storyHome').addEventListener('click', function () { show('scHome'); });
+document.getElementById('bkSave').addEventListener('click', function () {
+  const name = document.getElementById('bkName').value.trim();
+  const raw = document.getElementById('bkWords').value;
+  const words = [], seen = {};
+  raw.split(/[\s,;/]+/).forEach(function (w) {
+    const clean = w.replace(/[^A-Za-z'’-]/g, '').replace(/^[-'’]+|[-'’]+$/g, '');
+    if (!clean) return;
+    const disp = clean === 'I' ? 'I' : clean.toLowerCase();
+    if (seen[disp.toLowerCase()]) return;
+    seen[disp.toLowerCase()] = true;
+    words.push({ t: disp, eg: '', kind: 'word' });
+  });
+  if (!name) { toast('Give the set a name'); return; }
+  if (!words.length) { toast('Add at least one word'); return; }
+  /* If they pasted real sentences rather than a word list, keep them: each word
+     gets the sentence from the book it actually appeared in. */
+  const lines = raw.split(/[.!?]+/).map(function (x) { return x.trim(); })
+    .filter(function (x) { return x.split(/\s+/).length >= 3; });
+  if (lines.length) {
+    words.forEach(function (w) {
+      const hit = lines.find(function (l) {
+        return new RegExp('(^|[^A-Za-z])' + w.t + '([^A-Za-z]|$)', 'i').test(l);
+      });
+      if (!hit) return;
+      const k = keyOf(w);
+      const punct = raw.indexOf(hit + '?') > -1 ? '?' : raw.indexOf(hit + '!') > -1 ? '!' : '.';
+      const body = { text: hit + punct, src: 'book', at: Date.now() };
+      S.sent[k] = body;
+      saveDoc('sent/' + k, body);
+    });
+  }
+  const id = editingSet || ('u_' + Date.now().toString(36));
+  S.sets[id] = { name: name, kind: 'word', items: words, phase: 'Reading book',
+                 createdAt: (S.sets[id] && S.sets[id].createdAt) || Date.now() };
+  saveDoc('sets/' + id, S.sets[id]).then(function () {
+    S.selectedSet = id; mediaTab = id; editingSet = null;
+    document.getElementById('bkName').value = '';
+    document.getElementById('bkWords').value = '';
+    document.getElementById('bkSave').textContent = 'Add set';
+    document.getElementById('bkCancel').hidden = true;
+    renderAll();
+    toast(words.length + ' words ready');
+  });
+});
+document.getElementById('bkCancel').addEventListener('click', function () {
+  editingSet = null;
+  document.getElementById('bkName').value = '';
+  document.getElementById('bkWords').value = '';
+  document.getElementById('bkSave').textContent = 'Add set';
+  document.getElementById('bkCancel').hidden = true;
+});
+document.getElementById('optRobot').addEventListener('click', function () {
+  S.settings.robot = !S.settings.robot;
+  saveDoc('settings/app', S.settings);
+  renderGrown();
+});
+document.getElementById('optLen').addEventListener('click', function () {
+  const o = [6, 8, 10, 14, 20];
+  S.settings.roundLen = o[(o.indexOf(S.settings.roundLen) + 1) % o.length];
+  saveDoc('settings/app', S.settings);
+  renderGrown();
+});
+document.getElementById('optBatch').addEventListener('click', function () {
+  const o = [4, 5, 6, 8, 10];
+  S.settings.batchSize = o[(o.indexOf(S.settings.batchSize || 6) + 1) % o.length];
+  saveDoc('settings/app', S.settings);
+  renderAll();
+});
+
+/* eyes follow the finger, and blink */
+document.addEventListener('pointermove', function (e) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.monster svg').forEach(function (svg) {
+    const r = svg.getBoundingClientRect();
+    if (!r.width) return;
+    const dx = Math.max(-2.6, Math.min(2.6, (e.clientX - (r.left + r.width / 2)) / r.width * 9));
+    const dy = Math.max(-2.2, Math.min(2.2, (e.clientY - (r.top + r.height / 2)) / r.height * 9));
+    svg.querySelectorAll('.m-pupil').forEach(function (p) {
+      p.setAttribute('transform', 'translate(' + dx.toFixed(1) + ',' + dy.toFixed(1) + ')');
+    });
+  });
+}, { passive: true });
+setInterval(function () {
+  document.querySelectorAll('.monster .m-eyes').forEach(function (g) {
+    if (Math.random() > .22) return;
+    g.style.transition = 'transform .08s';
+    g.style.transformOrigin = 'center';
+    g.setAttribute('transform', 'scale(1,.12)');
+    setTimeout(function () { g.removeAttribute('transform'); }, 130);
+  });
+}, 2800);
+
+renderAll();
+initStore();
+</script>
+</body>
+</html>

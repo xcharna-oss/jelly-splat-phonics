@@ -1,0 +1,15 @@
+{
+  "name": "Jelly Splat Phonics",
+  "short_name": "Jelly Splat",
+  "description": "Reception phonics practice — splat the jelly monsters, trace the letters and read your own book.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#241438",
+  "theme_color": "#241438",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
