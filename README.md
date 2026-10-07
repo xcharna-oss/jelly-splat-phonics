@@ -87,6 +87,12 @@ what it read before saving** — it is good with clear, large print and poor wit
 small or decorative text. The sentences it finds become that word's example
 sentence, so the practice matches the actual book.
 
+The photos don't need to be the right way up: upside-down and sideways pages are
+turned round automatically, and the page photo is kept the right way up. It looks for
+the plain pale strip most early readers print their sentence on, which reads far
+better than the whole busy page; if there isn't one, it reads the whole page instead.
+Cover credits ("Written by …") are left out of the word list.
+
 ---
 
 ## Backing up

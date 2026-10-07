@@ -3266,6 +3266,211 @@ async function getOCR(onStatus) {
 
 
 
+/* ---------- reading one photographed page ----------
+   Photos of a reading book usually arrive upside down or sideways (the phone
+   is held however the book is lying), and the sentence is one short line on a
+   plain strip beside a busy photo. Tesseract on the whole page reads neither:
+   on a real Reception book, turned or not, it found almost no words, because
+   the photo swamps the line. So: find the pale strips, read each one both
+   ways round at a couple of sizes, and keep the reading that is most like
+   real words. Measured on that book: 26 of 32 words, against 0 before. */
+const ENOUGH = 280;   // about two confident real words: stop looking
+async function pageCanvas(file, maxPx) {
+  /* Drawn through an <img>, so the browser applies the photo's own
+     orientation tag first; what is left is how the book really lay. */
+  const img = await new Promise(function (res, rej) {
+    const im = new Image();
+    const url = URL.createObjectURL(file);
+    im.onload = function () { URL.revokeObjectURL(url); res(im); };
+    im.onerror = function () { URL.revokeObjectURL(url); rej(new Error('not an image')); };
+    im.src = url;
+  });
+  const scale = Math.min(1, maxPx / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.naturalWidth * scale);
+  c.height = Math.round(img.naturalHeight * scale);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c;
+}
+function shrink(src, maxPx) {
+  const scale = Math.min(1, maxPx / Math.max(src.width, src.height));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(src.width * scale));
+  c.height = Math.max(1, Math.round(src.height * scale));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+function lumaMeans(data, W, H, axis, x0, y0, x1, y1) {
+  const out = [];
+  if (axis === 'rows') {
+    for (let y = y0; y < y1; y++) {
+      let s = 0;
+      for (let x = x0; x < x1; x++) { const i = (y * W + x) * 4; s += .3 * data[i] + .59 * data[i + 1] + .11 * data[i + 2]; }
+      out.push(s / Math.max(1, x1 - x0));
+    }
+  } else {
+    for (let x = x0; x < x1; x++) {
+      let s = 0;
+      for (let y = y0; y < y1; y++) { const i = (y * W + x) * 4; s += .3 * data[i] + .59 * data[i + 1] + .11 * data[i + 2]; }
+      out.push(s / Math.max(1, y1 - y0));
+    }
+  }
+  return out;
+}
+/* Bands much brighter than the page as a whole, 4-45% of its depth, with a
+   little padding so the tops of the letters are not clipped. */
+function brightBands(mean) {
+  const n = mean.length;
+  const med = mean.slice().sort(function (a, b) { return a - b; })[Math.floor(n / 2)];
+  const out = [];
+  let start = -1;
+  for (let a = 0; a <= n; a++) {
+    const on = a < n && mean[a] > Math.max(med * 1.3, med + 30);
+    if (on && start < 0) start = a;
+    if (!on && start >= 0) {
+      if (a - start >= n * .04 && a - start <= n * .45) {
+        const pad = Math.round((a - start) * .15);
+        out.push([Math.max(0, start - pad), Math.min(n, a + pad)]);
+      }
+      start = -1;
+    }
+  }
+  return out;
+}
+/* Along a strip, trim only its dark ends (the next page, the table). A
+   shadow across the middle must not split it. */
+function trimEnds(mean) {
+  const n = mean.length;
+  const top = mean.slice().sort(function (a, b) { return b - a; })[Math.floor(n * .1)];
+  let a0 = 0, a1 = n - 1;
+  while (a0 < n && mean[a0] < top * .6) a0++;
+  while (a1 > a0 && mean[a1] < top * .6) a1--;
+  return (a1 - a0 > n * .25 && (a0 > 0 || a1 < n - 1)) ? [a0, a1 + 1] : null;
+}
+/* Strip boxes as fractions of the page, untrimmed then trimmed. */
+function findStrips(page) {
+  const small = shrink(page, 400);
+  const W = small.width, H = small.height;
+  const data = small.getContext('2d').getImageData(0, 0, W, H).data;
+  const out = [];
+  brightBands(lumaMeans(data, W, H, 'rows', 0, 0, W, H)).forEach(function (b) {
+    out.push({ x: 0, y: b[0] / H, w: 1, h: (b[1] - b[0]) / H, turns: [0, 180] });
+    const t = trimEnds(lumaMeans(data, W, H, 'cols', 0, b[0], W, b[1]));
+    if (t) out.push({ x: t[0] / W, y: b[0] / H, w: (t[1] - t[0]) / W, h: (b[1] - b[0]) / H, turns: [0, 180] });
+  });
+  brightBands(lumaMeans(data, W, H, 'cols', 0, 0, W, H)).forEach(function (b) {
+    out.push({ x: b[0] / W, y: 0, w: (b[1] - b[0]) / W, h: 1, turns: [90, 270] });
+    const t = trimEnds(lumaMeans(data, W, H, 'rows', b[0], 0, b[1], H));
+    if (t) out.push({ x: b[0] / W, y: t[0] / H, w: (b[1] - b[0]) / W, h: (t[1] - t[0]) / H, turns: [90, 270] });
+  });
+  return out;
+}
+/* A box of the page, turned by `turn` degrees clockwise, scaled to `height`
+   pixels tall, in grey with its contrast stretched. */
+function stripCanvas(page, box, turn, height) {
+  const sx = Math.round(box.x * page.width), sy = Math.round(box.y * page.height);
+  const sw = Math.max(8, Math.round(box.w * page.width)), sh = Math.max(8, Math.round(box.h * page.height));
+  const side = turn === 90 || turn === 270;
+  const rh = side ? sw : sh, rw = side ? sh : sw;
+  const k = height ? height / rh : 1;
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(rw * k)); c.height = Math.max(1, Math.round(rh * k));
+  const g = c.getContext('2d');
+  g.translate(c.width / 2, c.height / 2);
+  g.rotate(turn * Math.PI / 180);
+  g.drawImage(page, sx, sy, sw, sh, -sw * k / 2, -sh * k / 2, sw * k, sh * k);
+  if (height) {
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data, hist = new Array(256).fill(0);
+    for (let i = 0; i < d.length; i += 4) { const v = Math.round(.3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2]); d[i] = v; hist[v]++; }
+    const total = d.length / 4;
+    let lo = 0, hi = 255, acc = 0;
+    while (lo < 255 && (acc += hist[lo]) < total * .02) lo++;
+    acc = 0;
+    while (hi > 0 && (acc += hist[hi]) < total * .02) hi--;
+    const span = Math.max(1, hi - lo);
+    for (let i = 0; i < d.length; i += 4) {
+      const v = Math.max(0, Math.min(255, (d[i] - lo) * 255 / span));
+      d[i] = d[i + 1] = d[i + 2] = v;
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.putImageData(im, 0, 0);
+  }
+  return c;
+}
+/* Every word the app already knows, for telling a real reading from junk. */
+let READ_LEX = null;
+function readLex() {
+  if (READ_LEX) return READ_LEX;
+  READ_LEX = {};
+  const add = function (s) { (String(s).toLowerCase().match(/[a-z]+/g) || []).forEach(function (w) { READ_LEX[w] = true; }); };
+  BUILTIN.forEach(function (s) { s.items.forEach(function (it) { add(it.t); add(it.eg); }); });
+  Object.keys(SENT).forEach(function (k) { add(k); add(SENT[k]); });
+  allSets().forEach(function (s) { (s.items || []).forEach(function (it) { add(it.t); }); });
+  add('a i it is in at an on the and to of was he she we me be my you see by');
+  return READ_LEX;
+}
+/* The reader's commonest slips with this kind of type: "is" read as "15". */
+const DIGIT_LOOKALIKE = { '1': 'i', '5': 's', '0': 'o', '8': 'b', '6': 'b' };
+function fixWord(t) {
+  const core = String(t).replace(/[^A-Za-z0-9]/g, '');
+  if (!/\d/.test(core) || !/[A-Za-z]/.test(core) && core.length > 2) return t;
+  const swapped = core.toLowerCase().replace(/[0-9]/g, function (d) { return DIGIT_LOOKALIKE[d] || d; });
+  return readLex()[swapped] ? String(t).replace(core, swapped) : t;
+}
+/* Real words score; junk costs. A strip of photo read as text gives lots of
+   short junk, and without the cost its count outweighs the one real line. */
+function readingScore(words) {
+  const lex = readLex();
+  return words.reduce(function (s, x) {
+    const text = fixWord(x.text), w = text.replace(/[^A-Za-z]/g, ''), lw = w.toLowerCase();
+    const clean = /^[A-Za-z]+[.,!?'’]?$/.test(text);
+    if (clean && lex[lw] && (lw.length > 1 || lw === 'a' || w === 'I')) return s + x.confidence * 2;
+    if (clean && w.length >= 3 && x.confidence > 80) return s + x.confidence * .4;
+    return s - 25;
+  }, 0);
+}
+function canvasBlob(c) {
+  return new Promise(function (res) { c.toBlob(function (b) { res(b); }, 'image/jpeg', .82); });
+}
+async function readPage(worker, file) {
+  const page = await pageCanvas(file, 2400);
+  let best = { score: 0, words: [], turn: 0 };
+  const consider = function (r, turn) {
+    const words = ((r && r.data && r.data.words) || []).filter(function (x) { return x.confidence > 45; })
+      .map(function (x) { return { text: fixWord(x.text), confidence: x.confidence }; });
+    const score = readingScore(words);
+    if (score > best.score) best = { score: score, words: words, turn: turn };
+  };
+  try {
+    await worker.setParameters({ tessedit_pageseg_mode: '6' });
+    const strips = findStrips(page);
+    search:
+    for (let i = 0; i < strips.length; i++) {
+      for (let t = 0; t < strips[i].turns.length; t++) {
+        for (const h of [140, 240]) {
+          consider(await worker.recognize(stripCanvas(page, strips[i], strips[i].turns[t], h)), strips[i].turns[t]);
+          if (best.score >= ENOUGH) break search;
+        }
+      }
+    }
+    /* No strip read well: the text is printed over the picture. The whole
+       page, each way round, sparse-text mode. */
+    if (best.score < ENOUGH / 2) {
+      await worker.setParameters({ tessedit_pageseg_mode: '11' });
+      const whole = shrink(page, 1600);
+      for (const turn of [0, 180, 90, 270]) {
+        consider(await worker.recognize(stripCanvas(whole, { x: 0, y: 0, w: 1, h: 1 }, turn, 0)), turn);
+        if (best.score >= ENOUGH) break;
+      }
+    }
+  } catch (e) { /* unreadable: the page is kept, with no words */ }
+  const text = best.words.filter(function (x) { return x.confidence > 55; })
+    .map(function (x) { return x.text; }).join(' ');
+  /* The page photo is kept the right way up, for "Read the book". */
+  const upright = stripCanvas(shrink(page, 1600), { x: 0, y: 0, w: 1, h: 1 }, best.turn, 0);
+  return { blob: (await canvasBlob(upright)) || file, lines: linesFrom(text) };
+}
+
 async function readPages(files) {
   const status = document.getElementById('photoStatus');
   const btn = document.getElementById('photoPick');
@@ -3282,14 +3487,12 @@ async function readPages(files) {
   }
   const pages = [];
   for (let i = 0; i < files.length; i++) {
-    say('Reading page ' + (i + 1) + ' of ' + files.length + '...');
-    const blob = await downscale(files[i], 1600);
-    let text = '';
+    say('Reading page ' + (i + 1) + ' of ' + files.length + ' (turning it the right way up)...');
     try {
-      const r = await worker.recognize(blob);
-      text = (r && r.data && r.data.text) || '';
-    } catch (e) { text = ''; }
-    pages.push({ blob: blob, lines: linesFrom(text) });
+      pages.push(await readPage(worker, files[i]));
+    } catch (e) {
+      pages.push({ blob: await downscale(files[i], 1600), lines: [] });
+    }
   }
   btn.disabled = false;
   btn.classList.remove('thinking');
@@ -3311,6 +3514,9 @@ function linesFrom(text) {
     .filter(function (l) {
       if (l.length < 4 || l.length > 160) return false;
       const letters = (l.match(/[A-Za-z]/g) || []).length;
+      /* The cover's credits are not reading practice: "Written by Fiona
+         Kent" would put "fiona" and "kent" on this week's word list. */
+      if (/\b(written|illustrated|photographs?|pictures?)\s+by\b/i.test(l)) return false;
       return letters >= 4 && letters / l.length > 0.6 && /\s/.test(l);
     })
     .slice(0, 8);
