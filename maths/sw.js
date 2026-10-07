@@ -1,7 +1,6 @@
 /* Offline cache. Bump CACHE when you change any file, so phones pick it up. */
-const CACHE = 'jelly-splat-v2';
-const CORE = ['./', './index.html', './voices.mp3', './manifest.json',
-              './icon-192.png', './icon-512.png'];
+const CACHE = 'jelly-blocks-v1';
+const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
@@ -16,17 +15,16 @@ self.addEventListener('activate', function (e) {
   e.waitUntil(
     caches.keys()
       .then(function (keys) {
-        /* Only this app's old caches. Jelly Blocks Maths lives on the same site
-           (in maths/) and its offline copy must survive this one updating. */
-        return Promise.all(keys.filter(function (k) { return k.indexOf('jelly-splat-') === 0 && k !== CACHE; })
+        /* Only this app's old caches: Jelly Splat Phonics lives on the same
+           site and keeps its own. */
+        return Promise.all(keys.filter(function (k) { return k.indexOf('jelly-blocks-') === 0 && k !== CACHE; })
                                .map(function (k) { return caches.delete(k); }));
       })
       .then(function () { return self.clients.claim(); })
   );
 });
 
-/* Cache first, then network — so it opens with no signal, and anything new
-   (fonts, the OCR language data) is kept for next time. */
+/* Cache first, then network, so it opens with no signal. */
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   e.respondWith(

@@ -44,6 +44,11 @@ a time; the next batch and the **Stretch round** unlock once the current six are
 - **Stories** — twelve built-in stories, pick a topic and it reads one.
 - **Read the book** — your own photographed pages, every word tappable to hear.
 - **Stickers** — a jelly monster for every finished round.
+- **First sounds** — a picture appears and says its word; splat the jelly with the
+  sound it starts with. Practises hearing the first sound before he can read the word.
+  Pictures with a real voice (yours, or a free one) come up first.
+- **Jelly pairs** — a memory game. Every jelly says its sound as it turns over; find
+  the two that match. The board grows from three pairs to four after a tidy round.
 - **Progress** — what's confident, what needs another look, and a weekly line you
   can copy into the school reading record.
 
@@ -121,8 +126,39 @@ The game itself is yours to keep, change and pass on.
 | `voices.mp3` | The 105 free word recordings, in one audio file |
 | `manifest.json` | Lets it install to the home screen |
 | `sw.js` | Makes it work offline |
+| `maths/` | **Jelly Blocks Maths**, the sister app — see below |
 | `icon-192.png`, `icon-512.png` | The home-screen icon |
 
 To change wording or add word lists, open `index.html` in any text editor — the word
 lists are near the top, under `const BUILTIN`. If you change any file, bump the
 version in `sw.js` (`jelly-splat-v1` → `v2`) so phones pick up the new copy.
+
+
+---
+
+## Jelly Blocks Maths (the sister app)
+
+At the same web address with `/maths/` on the end, and linked from Grown-ups.
+Install it to the home screen the same way. It opens **fullscreen**: installed, it
+always does; in the browser, the first tap ("Tap to play!") switches to fullscreen,
+and if the phone's back gesture knocks it out, the next tap puts it back. Grown-ups
+can turn that off.
+
+- **Blocks** — free play. Tap + to drop a block on the tower; it counts out loud.
+  Towers stack in fives, so seven looks like five and two. Touch a block to hear
+  which one it is.
+- **How many?** — tap each block to count it (it lights up and says the number),
+  then pick the number. Touching every block once is the point: it is the step
+  four-year-olds skip.
+- **Make it** — build a tower of the number shown, then press the big tick. Too
+  many and it asks for one to be taken away.
+- **Dream Munch** — walk your jelly round a grid of numbers and munch the ones the
+  banner asks for, while a very slow, very sleepy ghost drifts after you. Nothing is
+  ever lost: if it catches you it says boo and you hop back to the start. Levels go
+  from matching numbers to 3, to 5, to dot patterns, to a mix, to tiny sums.
+
+Grown-ups (hold the button): voice on or off, fullscreen on or off, ghost on or off,
+and "count up to" 5, 10 or 20. *How many?* and *Dream Munch* move up a level on
+their own when a round goes well. Numbers are spoken by the phone's own voice.
+
+Every finished game puts a star in the jar on the home screen.

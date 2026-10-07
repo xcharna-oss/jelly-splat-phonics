@@ -530,6 +530,41 @@
     border: 2px solid var(--hair); background: var(--paper-2);
   }
   .strip button.lit { background: var(--c3); color: #1F2430; border-color: var(--edge); }
+
+  /* ---------- first sounds & jelly pairs ---------- */
+  .picture {
+    align-self: center; width: 150px; height: 150px; border-radius: 30px;
+    border: 3px solid var(--edge); background: var(--paper-2);
+    box-shadow: 0 5px 0 var(--edge); font-size: 92px; line-height: 1;
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .picture:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--edge); }
+  .picture.cheer { animation: cheer .6s ease; }
+  @keyframes cheer { 0%,100% { transform: scale(1); } 40% { transform: scale(1.14) rotate(-4deg); } 70% { transform: scale(.97) rotate(3deg); } }
+  .minimouth { width: 104px; height: 78px; align-self: center; }
+  .minimouth .tag { display: none; }
+  .pairs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; }
+  .pairs.four { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    position: relative; aspect-ratio: 1 / 1.08; border: 0; padding: 0; background: none;
+    cursor: pointer; perspective: 600px;
+  }
+  .card .face {
+    position: absolute; inset: 0; border-radius: 22px; border: 3px solid var(--edge);
+    box-shadow: 0 4px 0 var(--edge); display: grid; place-items: center;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    transition: transform .45s ease;
+  }
+  .card .face svg { width: 92%; height: 92%; overflow: visible; }
+  .card .back { background: var(--c5); transform: rotateY(0deg); font: 700 40px var(--ui); color: #fff; }
+  .card .front { background: var(--paper-2); transform: rotateY(180deg); }
+  .card.up .back { transform: rotateY(-180deg); }
+  .card.up .front { transform: rotateY(0deg); }
+  .card.matched .front { background: color-mix(in srgb, var(--good) 28%, var(--paper-2)); }
+  .card.matched { pointer-events: none; animation: cheer .6s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .card .face, .picture.cheer, .card.matched { transition: none !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -554,6 +589,10 @@
       <div class="row" style="gap:8px">
         <button class="half-btn" id="traceBtn">✎ Write the letters</button>
         <button class="half-btn" id="albumBtn">★ Stickers</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="half-btn" id="firstBtn">🍎 First sounds</button>
+        <button class="half-btn" id="pairsBtn">🃏 Jelly pairs</button>
       </div>
       <p id="heroSub">Pick a set and go</p>
     </div>
@@ -667,6 +706,39 @@
     <div class="album" id="albumGrid"></div>
     <p class="note" id="albumNote" style="margin-top:14px"></p>
     <button class="tbtn" id="albumBack" style="margin-top:14px">Back</button>
+  </main>
+
+  <!-- ===== FIRST SOUNDS ===== -->
+  <main class="screen" id="scFirst" hidden>
+    <div class="gamewrap">
+      <div class="pips" id="fsPips"></div>
+      <div class="prompt">
+        <div class="ask" id="fsAsk">What sound does it start with?</div>
+        <button class="picture" id="fsPic" aria-label="Hear it again"></button>
+        <div class="mouthbox minimouth" id="fsMouth"></div>
+      </div>
+      <div class="stage three" id="fsStage"></div>
+    </div>
+  </main>
+
+  <!-- ===== JELLY PAIRS ===== -->
+  <main class="screen" id="scPairs" hidden>
+    <div class="gamewrap">
+      <div class="ask" id="prAsk">Find two the same</div>
+      <div class="mouthbox minimouth" id="prMouth"></div>
+      <div class="pairs" id="prGrid"></div>
+    </div>
+  </main>
+
+  <!-- ===== MINI GAME WELL DONE ===== -->
+  <main class="screen" id="scMiniWell" hidden>
+    <div class="hero" style="margin-top:8px">
+      <h1 style="font-size:28px" id="mwTitle">You did it!</h1>
+      <div class="cast" id="mwSticker" style="height:120px"></div>
+      <p style="margin:0;text-align:center;font-size:15px;font-weight:600" id="mwLine"></p>
+      <button class="play-btn" id="mwAgain">Play again ▸</button>
+      <button class="stretch-btn" id="mwHome" style="border-style:solid">Home</button>
+    </div>
   </main>
 
   <!-- ===== STORY: ASK ===== -->
@@ -800,6 +872,7 @@
       </p>
       <div class="row">
         <button class="btn ghost" id="showCredits">Where the free voices come from</button>
+        <a class="btn ghost" href="maths/index.html" style="text-decoration:none;text-align:center">🧱 Open Jelly Blocks Maths</a>
       </div>
     </div>
 
@@ -2063,13 +2136,14 @@ async function removeOwn(item) {
    ========================================================== */
 function show(id) {
   ['scHome', 'scPlay', 'scReview', 'scGrown', 'scRec', 'scAsk', 'scStory',
-   'scWell', 'scTrace', 'scAlbum', 'scBook'].forEach(function (s) {
+   'scWell', 'scTrace', 'scAlbum', 'scBook', 'scFirst', 'scPairs', 'scMiniWell'].forEach(function (s) {
     document.getElementById(s).hidden = (s !== id);
   });
-  document.getElementById('navStop').hidden = (id !== 'scPlay');
+  document.getElementById('navStop').hidden = ['scPlay', 'scFirst', 'scPairs'].indexOf(id) < 0;
   document.getElementById('navGrown').textContent = (id === 'scGrown') ? 'Done' : 'Grown-ups';
   document.getElementById('navGrown').hidden =
-    ['scPlay', 'scRec', 'scAsk', 'scStory', 'scWell', 'scTrace', 'scAlbum', 'scBook'].indexOf(id) > -1;
+    ['scPlay', 'scRec', 'scAsk', 'scStory', 'scWell', 'scTrace', 'scAlbum', 'scBook',
+     'scFirst', 'scPairs', 'scMiniWell'].indexOf(id) > -1;
   const sc = document.getElementById(id);
   if (sc) sc.scrollTop = 0;
 }
@@ -2681,6 +2755,255 @@ function renderAlbum() {
   document.getElementById('albumNote').textContent = list.length
     ? 'One sticker for every finished round — two if he got them all first time.'
     : 'Finish a round to win your first sticker.';
+}
+
+/* ==========================================================
+   MINI GAMES — shared bits
+   ========================================================== */
+const MINI = { last: 'first' };
+function onScreen(id) { const el = document.getElementById(id); return !!el && !el.hidden; }
+/* A monster button for the mini games. Built here rather than with
+   makeMonster, whose click goes to the main game's onTap. */
+function miniMonster(text, idx, onPick) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'monster b' + (1 + idx % 4);
+  b.setAttribute('aria-label', text);
+  b.innerHTML = monsterSVG(monsterSeed++ * 17 + idx, text, MCOL[(monsterSeed + idx) % MCOL.length]);
+  b.querySelector('.m-body').classList.add('b' + (1 + idx % 4));
+  b.addEventListener('click', function () { onPick(b); });
+  return b;
+}
+function miniWin(acc, line) {
+  const won = awardSticker(acc);
+  document.getElementById('mwTitle').textContent = acc >= 100 ? 'All first time!' : 'You did it!';
+  document.getElementById('mwSticker').innerHTML = won.map(function (s) {
+    return monsterSVG(s.seed, '', MCOL[s.seed % MCOL.length]);
+  }).join('');
+  document.getElementById('mwLine').textContent =
+    line + ' · ' + won.length + ' new sticker' + (won.length > 1 ? 's' : '');
+  SFX.win();
+  show('scMiniWell');
+}
+
+/* ==========================================================
+   FIRST SOUNDS — what does the picture start with?
+   A picture rather than a written word, so it practises hearing the first
+   sound before he can read the word at all. The word is spoken with whatever
+   voice the app has for it: a grown-up's recording first, then the free one.
+   ========================================================== */
+const PICTURES = ('sun ☀️,sock 🧦,star ⭐,dog 🐶,duck 🦆,fish 🐟,fox 🦊,hat 🎩,hammer 🔨,' +
+  'egg 🥚,cup ☕,car 🚗,cat 🐱,coat 🧥,boat ⛵,book 📖,bus 🚌,bed 🛏️,box 📦,moon 🌙,' +
+  'man 👨,leg 🦵,lemon 🍋,light 💡,rain 🌧️,rat 🐀,ring 💍,pig 🐷,pen 🖊️,ant 🐜,apple 🍎,' +
+  'tent ⛺,teddy 🧸,nut 🥜,net 🥅,goat 🐐,gift 🎁,octopus 🐙,umbrella ☂️,van 🚐,web 🕸️,' +
+  'watch ⌚,zebra 🦓,kite 🪁,jeans 👖,yo-yo 🪀,ship 🚢,shell 🐚,chair 🪑,cheese 🧀,' +
+  'thumb 👍,queen 👸').split(',').map(function (pair) {
+    const bits = pair.trim().split(' ');
+    const w = bits[0];
+    const g = ['sh', 'ch', 'th', 'qu'].find(function (d) { return w.indexOf(d) === 0; }) || w[0];
+    return { w: w, e: bits[1], g: g };
+  });
+/* Letters that make the same first sound. A picture of a kite with both "k"
+   and "c" on offer has two right answers, so they are never offered together. */
+const SAME_SOUND = [['c', 'k', 'ck']];
+function sameSound(a, b) {
+  if (a === b) return true;
+  return SAME_SOUND.some(function (g) { return g.indexOf(a) > -1 && g.indexOf(b) > -1; });
+}
+const FIRST_FALLBACK = 'satpinmdgockeurhbfl';
+/* The pictures whose first sound he is working on, or has met: the sounds in
+   the chosen set if it is a sounds set, plus any sound he has played before.
+   Too few, and it falls back to the first Reception sounds. */
+function firstSoundPool() {
+  const want = {};
+  const sel = getSet(S.selectedSet);
+  if (sel && sel.kind === 'sound') sel.items.forEach(function (it) { want[it.t] = true; });
+  BUILTIN.forEach(function (s) {
+    if (s.kind !== 'sound') return;
+    s.items.forEach(function (it) { const r = rec(it); if (r.seen || r.right) want[it.t] = true; });
+  });
+  let pool = PICTURES.filter(function (p) { return want[p.g]; });
+  const distinct = {};
+  pool.forEach(function (p) { distinct[p.g] = true; });
+  if (Object.keys(distinct).length < 3) {
+    pool = PICTURES.filter(function (p) { return p.g.length === 1 && FIRST_FALLBACK.indexOf(p.g) > -1; });
+  }
+  return pool;
+}
+const FS = { list: [], i: 0, tries: 0, firstTry: 0, mouth: {}, busy: false, sounds: [] };
+function startFirstSounds() {
+  libReady();
+  /* Pictures that have a voice come first: his grown-up's recording, or one
+     of the free ones. The rest still turn up once those run out. */
+  const voiced = function (p) {
+    return (SPRITE[p.w] || hasOwn({ kind: 'word', t: p.w })) ? 1 : 0;
+  };
+  const pool = shuffle(firstSoundPool().slice()).sort(function (a, b) { return voiced(b) - voiced(a); });
+  FS.sounds = [];
+  pool.forEach(function (p) { if (FS.sounds.indexOf(p.g) < 0) FS.sounds.push(p.g); });
+  FS.list = [];
+  for (let i = 0; FS.list.length < 8 && pool.length; i++) {
+    const next = pool[i % pool.length];
+    if (FS.list.length && FS.list[FS.list.length - 1] === next) continue;
+    FS.list.push(next);
+    if (i > 40) break;
+  }
+  FS.i = 0; FS.firstTry = 0; FS.mouth = {};
+  MINI.last = 'first';
+  show('scFirst');
+  firstStep();
+}
+function firstStep() {
+  if (FS.i >= FS.list.length) {
+    const acc = Math.round(100 * FS.firstTry / FS.list.length);
+    return miniWin(acc, FS.list.length + ' pictures');
+  }
+  const pic = FS.list[FS.i];
+  FS.tries = 0; FS.busy = false;
+
+  const pips = document.getElementById('fsPips');
+  pips.innerHTML = '';
+  FS.list.forEach(function (_, i) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < FS.i ? ' done' : i === FS.i ? ' now' : '');
+    pips.appendChild(p);
+  });
+  const btn = document.getElementById('fsPic');
+  btn.textContent = pic.e;
+  btn.setAttribute('aria-label', pic.w + ' — hear it again');
+
+  /* Two others he is working on, never one that sounds the same. */
+  let others = FS.sounds.filter(function (g) { return !sameSound(g, pic.g); });
+  if (others.length < 2) {
+    others = FIRST_FALLBACK.split('').filter(function (g) { return !sameSound(g, pic.g); });
+  }
+  const opts = shuffle([pic.g].concat(shuffle(others.slice()).slice(0, 2)));
+  const stage = document.getElementById('fsStage');
+  stage.innerHTML = '';
+  opts.forEach(function (g, i) {
+    stage.appendChild(miniMonster(g, i, function (el) { firstTap(el, g); }));
+  });
+  setTimeout(function () { if (onScreen('scFirst')) sayPicture(); }, 250);
+}
+function sayPicture() {
+  const pic = FS.list[FS.i];
+  if (pic) present(document.getElementById('fsMouth'), FS.mouth, { kind: 'word', t: pic.w });
+}
+function firstTap(el, g) {
+  if (FS.busy) return;
+  const pic = FS.list[FS.i];
+  if (sameSound(g, pic.g)) {
+    FS.busy = true;
+    if (FS.tries === 0) FS.firstTry++;
+    SFX.splat();
+    splatAt(el);
+    const btn = document.getElementById('fsPic');
+    btn.classList.add('cheer');
+    /* Then the sound on its own, so the link between the word he heard and
+       the letter he splatted is heard as well as seen. */
+    setTimeout(function () {
+      if (onScreen('scFirst')) present(document.getElementById('fsMouth'), FS.mouth, soundItem(pic.g));
+    }, 500);
+    setTimeout(function () {
+      if (!onScreen('scFirst')) return;
+      btn.classList.remove('cheer');
+      FS.i++;
+      firstStep();
+    }, 2100);
+  } else {
+    FS.tries++;
+    SFX.nope();
+    el.classList.add('shake');
+    setTimeout(function () { el.classList.remove('shake'); }, 460);
+    if (FS.tries >= 2) el.classList.add('gone');
+    setTimeout(function () { if (onScreen('scFirst')) sayPicture(); }, 350);
+  }
+}
+
+/* ==========================================================
+   JELLY PAIRS — a memory game with sounds
+   Every jelly says its sound as it turns over, so it is a listening game as
+   much as a remembering one. Colours are random per jelly: the match is the
+   sound, not the colour.
+   ========================================================== */
+const PR = { pairs: 3, open: [], matched: 0, flips: 0, lock: false, mouth: {} };
+function pairsItems(n) {
+  const sel = getSet(S.selectedSet);
+  const seen = {}, out = [];
+  const add = function (it) {
+    const label = String(it.t).toLowerCase();
+    if (seen[label] || out.length >= n) return;
+    seen[label] = true;
+    out.push(it);
+  };
+  if (sel && sel.items.length) shuffle(batchInfo(sel).items.slice()).forEach(add);
+  shuffle(BUILTIN[0].items.slice()).forEach(add);
+  return out;
+}
+function startPairs() {
+  libReady();
+  const items = pairsItems(PR.pairs);
+  PR.open = []; PR.matched = 0; PR.flips = 0; PR.lock = false; PR.mouth = {};
+  PR.total = items.length;
+  MINI.last = 'pairs';
+  const grid = document.getElementById('prGrid');
+  grid.className = 'pairs' + (items.length >= 4 ? ' four' : '');
+  grid.innerHTML = '';
+  const deck = shuffle(items.concat(items));
+  deck.forEach(function (it, i) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'card';
+    card.setAttribute('aria-label', 'A hidden jelly');
+    const seed = Math.floor(Math.random() * 99999);
+    card.innerHTML = '<span class="face back">?</span>' +
+      '<span class="face front">' + monsterSVG(seed, it.t, MCOL[(seed + i) % MCOL.length]) + '</span>';
+    card._item = it;
+    card.addEventListener('click', function () { flipCard(card); });
+    grid.appendChild(card);
+  });
+  document.getElementById('prAsk').textContent = 'Find two the same — tap a jelly to hear it';
+  show('scPairs');
+}
+function flipCard(card) {
+  if (PR.lock || card.classList.contains('up')) return;
+  card.classList.add('up');
+  card.setAttribute('aria-label', card._item.t);
+  PR.flips++;
+  present(document.getElementById('prMouth'), PR.mouth, card._item);
+  PR.open.push(card);
+  if (PR.open.length < 2) return;
+
+  PR.lock = true;
+  const a = PR.open[0], b = PR.open[1];
+  PR.open = [];
+  if (String(a._item.t).toLowerCase() === String(b._item.t).toLowerCase()) {
+    setTimeout(function () {
+      if (!onScreen('scPairs')) return;
+      a.classList.add('matched'); b.classList.add('matched');
+      SFX.splat(); gooBurst(a); gooBurst(b);
+      PR.matched++;
+      PR.lock = false;
+      if (PR.matched === PR.total) {
+        /* Tidy rounds earn the bigger board next time; it never gets harder
+           than four pairs. */
+        const tidy = PR.flips <= PR.total * 2 + 4;
+        if (tidy) PR.pairs = Math.min(4, PR.pairs + 1);
+        setTimeout(function () {
+          if (onScreen('scPairs')) miniWin(tidy ? 100 : 80, PR.total + ' pairs found');
+        }, 900);
+      }
+    }, 650);
+  } else {
+    /* Left face up long enough to look at both and hear them. */
+    setTimeout(function () {
+      if (!onScreen('scPairs')) return;
+      SFX.nope();
+      a.classList.remove('up'); b.classList.remove('up');
+      a.setAttribute('aria-label', 'A hidden jelly'); b.setAttribute('aria-label', 'A hidden jelly');
+      PR.lock = false;
+    }, 1600);
+  }
 }
 
 /* ==========================================================
@@ -3462,6 +3785,21 @@ document.getElementById('albumBtn').addEventListener('click', function () {
   show('scAlbum');
 });
 document.getElementById('albumBack').addEventListener('click', function () { show('scHome'); });
+document.getElementById('firstBtn').addEventListener('click', function () {
+  if (actx && actx.state === 'suspended') actx.resume();
+  unlockAudio();
+  startFirstSounds();
+});
+document.getElementById('pairsBtn').addEventListener('click', function () {
+  if (actx && actx.state === 'suspended') actx.resume();
+  unlockAudio();
+  startPairs();
+});
+document.getElementById('fsPic').addEventListener('click', sayPicture);
+document.getElementById('mwAgain').addEventListener('click', function () {
+  if (MINI.last === 'pairs') startPairs(); else startFirstSounds();
+});
+document.getElementById('mwHome').addEventListener('click', function () { renderHome(); show('scHome'); });
 document.getElementById('traceClear').addEventListener('click', clearInk);
 document.getElementById('traceCheck').addEventListener('click', checkTrace);
 document.getElementById('traceNext').addEventListener('click', function () { TR.i++; traceStep(); });

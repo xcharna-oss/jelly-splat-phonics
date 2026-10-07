@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Jelly Blocks Maths</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#241438">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html { color-scheme: light dark; }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+  /* Colours and type are the same as Jelly Splat Phonics, so the two read as
+     one family of apps. */
+  :root {
+    color-scheme: light;
+    --paper:    #FBF3E4;
+    --paper-2:  #F4E9D5;
+    --paper-3:  #EADDC4;
+    --ink:      #1F2430;
+    --ink-soft: #6A6355;
+    --edge:     #1F2430;
+    --hair:     rgba(31,36,48,.14);
+    --shade:    rgba(31,36,48,.10);
+    --c1: #E8455F;  --c2: #45A96C;  --c3: #F5A524;
+    --c4: #4A7DD6;  --c5: #8A5CD1;  --c6: #EF6F3C;
+    --good: #45A96C;
+    --oops: #EF6F3C;
+    --ui: "Baloo 2", "Trebuchet MS", sans-serif;
+    --num: "Andika", "Comic Sans MS", "Trebuchet MS", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper:    #171B26;
+      --paper-2:  #1F2431;
+      --paper-3:  #29303F;
+      --ink:      #F6EEDF;
+      --ink-soft: #A29A8B;
+      --edge:     #0D1017;
+      --hair:     rgba(246,238,223,.16);
+      --shade:    rgba(0,0,0,.34);
+      --c1: #FF5C74;  --c2: #4FC07C;  --c3: #FFB93D;
+      --c4: #5E92E8;  --c5: #A275E5;  --c6: #FF8351;
+      --good: #4FC07C;
+      --oops: #FF8351;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:    #171B26;
+    --paper-2:  #1F2431;
+    --paper-3:  #29303F;
+    --ink:      #F6EEDF;
+    --ink-soft: #A29A8B;
+    --edge:     #0D1017;
+    --hair:     rgba(246,238,223,.16);
+    --shade:    rgba(0,0,0,.34);
+    --c1: #FF5C74;  --c2: #4FC07C;  --c3: #FFB93D;
+    --c4: #5E92E8;  --c5: #A275E5;  --c6: #FF8351;
+    --good: #4FC07C;
+    --oops: #FF8351;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 18% 12%, var(--shade) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 62% 47%, var(--shade) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 86% 78%, var(--shade) 0 1px, transparent 1.6px);
+    background-size: 26px 26px, 37px 37px, 31px 31px;
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  :focus-visible { outline: 3px solid var(--c4); outline-offset: 2px; border-radius: 4px; }
+
+  #app { height: 100%; max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; min-height: 0; }
+  .topbar { display: flex; align-items: center; gap: 8px; padding: 10px 16px 4px; }
+  .wordmark { margin-right: auto; display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 19px; }
+  .wordmark svg { width: 28px; height: 28px; display: block; }
+  .tbtn {
+    padding: 7px 14px; border-radius: 999px; border: 2px solid var(--edge);
+    background: var(--paper-2); font-weight: 700; font-size: 14px;
+    box-shadow: 2px 2px 0 var(--edge);
+  }
+  .tbtn:active { transform: translate(2px, 2px); box-shadow: none; }
+  .homebtn { font-size: 22px; padding: 4px 14px; }
+
+  .screen { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ---------- start (the tap that turns sound on and goes fullscreen) ---------- */
+  #scStart { justify-content: center; align-items: center; text-align: center; }
+  #scStart .cast svg { width: 150px; height: 150px; }
+  .bigtap {
+    font-size: 34px; font-weight: 800; padding: 18px 40px; border-radius: 26px;
+    background: var(--c3); color: #1F2430; border: 3px solid var(--edge);
+    box-shadow: 0 6px 0 var(--edge); animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { transform: scale(1.06); } }
+
+  /* ---------- home ---------- */
+  .jar {
+    border: 2.5px solid var(--edge); border-radius: 22px; background: var(--paper-2);
+    box-shadow: 4px 4px 0 var(--edge); padding: 10px 14px; display: flex; align-items: center; gap: 12px;
+  }
+  .jar .stars { flex: 1; font-size: 22px; line-height: 1.25; letter-spacing: 1px; min-height: 28px; word-break: break-all; }
+  .jar b { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .games { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .game {
+    border: 3px solid var(--edge); border-radius: 24px; box-shadow: 0 6px 0 var(--edge);
+    padding: 10px 8px 12px; display: grid; justify-items: center; gap: 2px;
+    color: #1F2430; font-weight: 800; font-size: 21px; line-height: 1.1;
+  }
+  .game:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge); }
+  .game .pic { height: 92px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
+  .game .pic .block { width: 28px; height: 28px; border-width: 2.5px; border-radius: 7px; }
+  .game .pic .block .eyes { top: 4px; gap: 4px; }
+  .game .pic .block .eyes i { width: 7px; height: 8px; border-width: 1.5px; }
+  .game .pic .block .eyes i::after { width: 3px; height: 3px; left: 1px; top: 2px; }
+  .game .pic .column { gap: 2px; }
+  .game small { font-size: 13px; font-weight: 600; opacity: .8; }
+  .g1 { background: var(--c3); } .g2 { background: var(--c2); } .g3 { background: var(--c4); } .g4 { background: var(--c5); color: #fff; }
+
+  /* ---------- blocks ---------- */
+  .block {
+    width: 54px; height: 54px; border-radius: 12px; border: 3px solid var(--edge);
+    position: relative; flex: none; display: grid; place-items: center;
+    box-shadow: inset 0 -6px 0 rgba(0,0,0,.14), inset 0 5px 0 rgba(255,255,255,.28);
+    font: 700 22px var(--num); color: #1F2430;
+  }
+  .block.drop { animation: drop .32s cubic-bezier(.3,1.5,.6,1); }
+  @keyframes drop { from { transform: translateY(-120px); opacity: 0; } }
+  .block.wiggle { animation: wiggle .45s ease; }
+  @keyframes wiggle { 25% { transform: rotate(-9deg) scale(1.08); } 75% { transform: rotate(8deg) scale(1.08); } }
+  .block .eyes { position: absolute; top: 9px; left: 0; right: 0; display: flex; justify-content: center; gap: 9px; }
+  .block .eyes i { width: 11px; height: 13px; border-radius: 50%; background: #FFF8EC; border: 2px solid var(--edge); position: relative; }
+  .block .eyes i::after { content: ""; position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--edge); left: 2.5px; top: 4px; }
+  .block.counted { outline: 5px solid var(--c3); outline-offset: 2px; }
+  .towerbox {
+    flex: 1; min-height: 260px; display: flex; align-items: flex-end; justify-content: center; gap: 10px;
+    padding: 10px; border-radius: 22px; border: 2.5px dashed var(--hair);
+  }
+  .column { display: flex; flex-direction: column-reverse; gap: 4px; }
+  .readout { text-align: center; display: grid; gap: 0; }
+  .readout .n { font: 700 84px/1 var(--num); font-variant-numeric: tabular-nums; }
+  .readout .w { font-size: 22px; font-weight: 700; color: var(--ink-soft); min-height: 30px; }
+  .controls { display: flex; gap: 12px; justify-content: center; }
+  .round {
+    width: 92px; height: 92px; border-radius: 50%; border: 3px solid var(--edge);
+    box-shadow: 0 6px 0 var(--edge); font: 800 52px/1 var(--ui); display: grid; place-items: center;
+  }
+  .round:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge); }
+  .round.add { background: var(--c2); color: #1F2430; }
+  .round.take { background: var(--c1); color: #1F2430; }
+  .round.done { background: var(--c3); color: #1F2430; width: 110px; }
+  .round[disabled] { opacity: .35; }
+
+  /* ---------- prompts and answers ---------- */
+  .prompt {
+    border: 2.5px solid var(--edge); border-radius: 22px; background: var(--paper-2);
+    box-shadow: 4px 4px 0 var(--edge); padding: 10px 14px; display: flex; align-items: center; gap: 14px;
+  }
+  .prompt .say { flex: 1; font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .prompt .target { font: 700 64px/1 var(--num); min-width: 64px; text-align: center; }
+  .prompt svg.dots { width: 70px; height: 70px; flex: none; }
+  .hear { font-size: 26px; padding: 6px 10px; border-radius: 14px; border: 2px solid var(--edge); background: var(--paper); box-shadow: 2px 2px 0 var(--edge); }
+  .pips { display: flex; gap: 5px; }
+  .pip { flex: 1; height: 8px; border-radius: 4px; background: var(--hair); }
+  .pip.done { background: var(--good); }
+  .pip.now { background: var(--c3); }
+  .scatter { flex: 1; min-height: 240px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; place-items: center; align-content: center; }
+  .scatter .block { width: 64px; height: 64px; }
+  .answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .answer {
+    aspect-ratio: 1; border-radius: 26px; border: 3px solid var(--edge); box-shadow: 0 6px 0 var(--edge);
+    font: 700 60px/1 var(--num); color: #1F2430; display: grid; place-items: center;
+  }
+  .answer:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge); }
+  .answer.shake { animation: shake .45s ease; }
+  .answer.gone { opacity: .2; pointer-events: none; }
+  .answer.yes { animation: cheer .6s ease; background: var(--good) !important; }
+  @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  @keyframes cheer { 0%,100% { transform: scale(1); } 40% { transform: scale(1.14) rotate(-4deg); } 70% { transform: scale(.97) rotate(3deg); } }
+
+  /* ---------- dream munch ---------- */
+  .board { position: relative; display: grid; gap: 8px; margin: 0 auto; width: 100%; max-width: 440px; }
+  .tile {
+    aspect-ratio: 1; border-radius: 18px; border: 3px solid var(--edge); background: var(--paper-2);
+    box-shadow: 0 4px 0 var(--edge); display: grid; place-items: center;
+    font: 700 46px/1 var(--num); color: var(--ink); position: relative;
+  }
+  .tile svg.dots { width: 72%; height: 72%; }
+  .tile .sum { font-size: 30px; }
+  .tile.eaten { background: transparent; border-style: dashed; border-color: var(--hair); box-shadow: none; color: transparent; }
+  .tile.eaten > * { visibility: hidden; }
+  .tile.nope { animation: shake .45s ease; }
+  .board.night .tile:not(.eaten) { background: color-mix(in srgb, var(--c5) 16%, var(--paper-2)); }
+  .sprite {
+    position: absolute; pointer-events: none; z-index: 2;
+    transition: left .5s ease-in-out, top .5s ease-in-out;
+  }
+  .sprite svg { width: 100%; height: 100%; overflow: visible; }
+  .sprite.chomp svg { animation: cheer .5s ease; }
+  .ghost { z-index: 3; transition: left 1.4s ease-in-out, top 1.4s ease-in-out, opacity .6s; opacity: .9; }
+  .ghost.asleep svg { opacity: .55; }
+  .ghost .zz { position: absolute; right: -4px; top: -10px; font-weight: 800; font-size: 20px; color: var(--c4); }
+  .ghost.boo svg { animation: wiggle .45s ease 2; }
+
+  /* ---------- well done ---------- */
+  .win { text-align: center; justify-content: center; align-items: center; }
+  .win h1 { font-size: 38px; margin: 0; }
+  .win .cast svg { width: 140px; height: 140px; }
+  .bigstar { font-size: 56px; animation: cheer .8s ease 2; }
+  .play-btn {
+    width: 100%; padding: 16px; border-radius: 18px; background: var(--c3); color: #1F2430;
+    border: 3px solid var(--edge); box-shadow: 0 6px 0 var(--edge); font-size: 24px; font-weight: 800;
+  }
+  .play-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--edge); }
+  .ghost-btn {
+    width: 100%; padding: 13px; border-radius: 18px; background: var(--paper-2);
+    border: 2.5px solid var(--edge); box-shadow: 0 4px 0 var(--edge); font-size: 19px; font-weight: 700;
+  }
+
+  /* ---------- grown-ups ---------- */
+  .panel { border: 2px solid var(--hair); border-radius: 16px; padding: 12px 14px; background: var(--paper-2); display: grid; gap: 12px; }
+  .opt { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 600; }
+  .opt input { width: 24px; height: 24px; accent-color: var(--c2); }
+  .opt select { font: inherit; padding: 4px 8px; border-radius: 10px; border: 2px solid var(--edge); background: var(--paper); color: var(--ink); }
+  .note { font-size: 13px; line-height: 1.55; color: var(--ink-soft); font-weight: 500; margin: 0; }
+  .note a { color: var(--c4); font-weight: 700; }
+  h2.sect { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); font-weight: 700; margin: 10px 0 0; }
+
+  .confetti { position: fixed; width: 12px; height: 12px; border-radius: 3px; pointer-events: none; z-index: 50;
+    animation: fling .9s ease-out forwards; }
+  @keyframes fling { to { transform: translate(var(--dx), var(--dy)) rotate(260deg); opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+  @media (max-height: 700px) {
+    .readout .n { font-size: 64px; }
+    .round { width: 78px; height: 78px; font-size: 44px; }
+    .game .pic { height: 70px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="wordmark"><span id="markSlot"></span>Jelly Blocks</div>
+    <button class="tbtn homebtn" id="navHome" hidden aria-label="Home">⌂</button>
+    <button class="tbtn" id="navGrown">Grown-ups</button>
+  </div>
+
+  <!-- The first tap turns the sound on and goes fullscreen; browsers allow
+       neither without one. -->
+  <main class="screen" id="scStart">
+    <div class="cast" id="startCast"></div>
+    <button class="bigtap" id="startTap">Tap to play!</button>
+  </main>
+
+  <main class="screen" id="scHome" hidden>
+    <div class="jar" aria-label="Star jar">
+      <span style="font-size:30px">🫙</span>
+      <div class="stars" id="jarStars"></div>
+      <b id="jarCount">0</b>
+    </div>
+    <div class="games">
+      <button class="game g1" id="goBlocks"><span class="pic" id="picBlocks"></span>Blocks<small>tap to build</small></button>
+      <button class="game g2" id="goHow"><span class="pic" id="picHow"></span>How many?<small>count them</small></button>
+      <button class="game g3" id="goMake"><span class="pic" id="picMake"></span>Make it<small>build the number</small></button>
+      <button class="game g4" id="goMunch"><span class="pic" id="picMunch"></span>Dream Munch<small>munch the numbers</small></button>
+    </div>
+  </main>
+
+  <!-- BLOCKS: free play -->
+  <main class="screen" id="scBlocks" hidden>
+    <div class="readout"><div class="n" id="blkN">0</div><div class="w" id="blkW">tap the green button</div></div>
+    <div class="towerbox" id="blkTower"></div>
+    <div class="controls">
+      <button class="round take" id="blkTake" aria-label="Take one away">−</button>
+      <button class="round add" id="blkAdd" aria-label="Add a block">+</button>
+    </div>
+  </main>
+
+  <!-- HOW MANY: count each block, then pick the number -->
+  <main class="screen" id="scHow" hidden>
+    <div class="pips" id="howPips"></div>
+    <div class="prompt"><div class="say" id="howSay">Tap each block to count it</div><button class="hear" id="howHear" aria-label="Say it again">🔊</button></div>
+    <div class="scatter" id="howBlocks"></div>
+    <div class="answers" id="howAnswers"></div>
+  </main>
+
+  <!-- MAKE IT: build a tower of the number shown -->
+  <main class="screen" id="scMake" hidden>
+    <div class="pips" id="makePips"></div>
+    <div class="prompt">
+      <div class="target" id="makeN">3</div><svg class="dots" id="makeDots"></svg>
+      <div class="say" id="makeSay">Make 3</div>
+      <button class="hear" id="makeHear" aria-label="Say it again">🔊</button>
+    </div>
+    <div class="towerbox" id="makeTower"></div>
+    <div class="controls">
+      <button class="round take" id="makeTake" aria-label="Take one away">−</button>
+      <button class="round add" id="makeAdd" aria-label="Add a block">+</button>
+      <button class="round done" id="makeDone" aria-label="Done">✓</button>
+    </div>
+  </main>
+
+  <!-- DREAM MUNCH -->
+  <main class="screen" id="scMunch" hidden>
+    <div class="prompt">
+      <div class="say" id="munchSay">Munch the</div>
+      <div class="target" id="munchT">3</div><svg class="dots" id="munchDots"></svg>
+      <button class="hear" id="munchHear" aria-label="Say it again">🔊</button>
+    </div>
+    <div class="board night" id="board"></div>
+    <p class="note" style="text-align:center" id="munchNote">Tap a square to walk there and munch it</p>
+  </main>
+
+  <main class="screen win" id="scWin" hidden>
+    <div class="bigstar">⭐</div>
+    <h1 id="winTitle">You did it!</h1>
+    <div class="cast" id="winCast"></div>
+    <p class="note" id="winLine" style="font-size:17px"></p>
+    <button class="play-btn" id="winAgain">Play again ▸</button>
+    <button class="ghost-btn" id="winHome">Home</button>
+  </main>
+
+  <main class="screen" id="scGrown" hidden>
+    <h2 class="sect">Settings</h2>
+    <div class="panel">
+      <label class="opt"><input type="checkbox" id="optVoice"> Say the numbers out loud</label>
+      <label class="opt"><input type="checkbox" id="optFull"> Go fullscreen when it starts</label>
+      <label class="opt"><input type="checkbox" id="optGhost"> Sleepy ghost in Dream Munch</label>
+      <label class="opt">Count up to
+        <select id="optMax"><option value="5">5</option><option value="10">10</option><option value="20">20</option></select>
+      </label>
+    </div>
+    <p class="note">
+      The numbers are spoken by the phone's own voice. Leave "up to 5" until the five-or-fewer
+      games feel easy — "How many?" and "Dream Munch" move on by themselves as he gets them right.
+      The blocks stack in fives so seven looks like five and two.
+    </p>
+    <h2 class="sect">Progress</h2>
+    <div class="panel">
+      <p class="note" id="grownStats"></p>
+      <button class="ghost-btn" id="optReset">Start the levels again</button>
+    </div>
+    <p class="note">Sister app: <a href="../index.html">Jelly Splat Phonics</a>. Hold “Grown-ups” to get here — the hold stops little fingers wandering in.</p>
+    <button class="play-btn" id="grownDone">Done</button>
+  </main>
+</div>
+
+<script>
+/* ==========================================================
+   Jelly Blocks Maths — counting for four-year-olds.
+   One file, no build step, nothing leaves the phone. Progress lives in this
+   browser's localStorage.
+   ========================================================== */
+
+/* ---------- art (the same jelly monsters as Jelly Splat) ---------- */
+function rng(seed) { let s = seed >>> 0 || 1; return function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 10000) / 10000; }; }
+function blobPath(seed, r) {
+  const rand = rng(seed), n = 7, pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const rr = r * (0.82 + rand() * 0.32);
+    pts.push([Math.cos(a) * rr, Math.sin(a) * rr * 0.94]);
+  }
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    if (i === 0) d += 'M' + p1[0].toFixed(1) + ' ' + p1[1].toFixed(1);
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += 'C' + c1[0].toFixed(1) + ' ' + c1[1].toFixed(1) + ',' + c2[0].toFixed(1) + ' ' + c2[1].toFixed(1) +
+         ',' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+  }
+  return d + 'Z';
+}
+const MCOL = ['--c1', '--c2', '--c3', '--c4', '--c5', '--c6'];
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function monsterSVG(seed, text, colorVar) {
+  const rand = rng(seed * 7 + 3);
+  const body = blobPath(seed * 31 + 11, 42);
+  const legs = rand() > .45, horns = rand() > .55;
+  const eyeY = -17 - rand() * 5, eyeGap = 13 + rand() * 5, eyeR = 6.5 + rand() * 2.5;
+  let extra = '';
+  if (horns) {
+    extra += '<path d="M-16 -38 L-20 -54 L-8 -42Z" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3" stroke-linejoin="round"/>' +
+             '<path d="M16 -38 L21 -55 L9 -42Z" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3" stroke-linejoin="round"/>';
+  }
+  if (legs) {
+    extra += '<rect x="-24" y="32" width="13" height="16" rx="6" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3"/>' +
+             '<rect x="11" y="32" width="13" height="16" rx="6" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3"/>';
+  }
+  return '<svg viewBox="-60 -62 120 124" aria-hidden="true">' +
+    '<ellipse cx="0" cy="52" rx="30" ry="6" fill="var(--edge)" opacity=".14"/>' + extra +
+    '<path d="' + body + '" fill="var(' + colorVar + ')" stroke="var(--edge)" stroke-width="3.5" stroke-linejoin="round"/>' +
+    '<path d="' + body + '" fill="none" stroke="#fff" stroke-width="2.5" opacity=".28" transform="scale(.82) translate(-3,-5)"/>' +
+    '<ellipse cx="' + (-eyeGap) + '" cy="' + eyeY + '" rx="' + eyeR + '" ry="' + (eyeR * 1.15) + '" fill="#FFF8EC" stroke="var(--edge)" stroke-width="2.5"/>' +
+    '<ellipse cx="' + eyeGap + '" cy="' + eyeY + '" rx="' + eyeR + '" ry="' + (eyeR * 1.15) + '" fill="#FFF8EC" stroke="var(--edge)" stroke-width="2.5"/>' +
+    '<circle cx="' + (-eyeGap) + '" cy="' + eyeY + '" r="3.2" fill="var(--edge)"/>' +
+    '<circle cx="' + eyeGap + '" cy="' + eyeY + '" r="3.2" fill="var(--edge)"/>' +
+    (text ? '<text x="0" y="26" text-anchor="middle" font-family="Andika, sans-serif" font-weight="700" font-size="34" fill="#1F2430">' + esc(text) + '</text>' : '') +
+    '</svg>';
+}
+/* The dream ghost: soft, round and sleepy rather than scary. */
+function ghostSVG() {
+  return '<svg viewBox="-50 -55 100 110" aria-hidden="true">' +
+    '<path d="M-34 40 L-34 -8 C-34 -36 -18 -48 0 -48 C18 -48 34 -36 34 -8 L34 40 L22 30 L11 40 L0 30 L-11 40 L-22 30 Z" ' +
+      'fill="#EDE8FF" stroke="var(--edge)" stroke-width="3.5" stroke-linejoin="round"/>' +
+    '<path d="M-16 -12 q6 -6 12 0" fill="none" stroke="var(--edge)" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<path d="M4 -12 q6 -6 12 0" fill="none" stroke="var(--edge)" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<ellipse cx="0" cy="8" rx="6" ry="7" fill="var(--edge)" opacity=".75"/>' +
+    '<circle cx="-22" cy="2" r="5" fill="var(--c1)" opacity=".35"/><circle cx="22" cy="2" r="5" fill="var(--c1)" opacity=".35"/>' +
+    '</svg>';
+}
+/* Dots arranged the way they are on dice and in school number cards, so a
+   pattern can be recognised without counting. */
+const DOTS = {
+  1: [[50, 50]], 2: [[30, 30], [70, 70]], 3: [[25, 25], [50, 50], [75, 75]],
+  4: [[30, 30], [70, 30], [30, 70], [70, 70]], 5: [[28, 28], [72, 28], [50, 50], [28, 72], [72, 72]],
+  6: [[30, 24], [70, 24], [30, 50], [70, 50], [30, 76], [70, 76]]
+};
+function dotsSVG(n, colorVar) {
+  let pts = DOTS[n];
+  let r = 10;
+  if (!pts) {
+    /* Past six: two rows of five, like a ten frame. */
+    pts = []; r = 7;
+    for (let i = 0; i < n; i++) pts.push([14 + (i % 5) * 18, n > 10 ? 18 + Math.floor(i / 5) * 21 : 34 + Math.floor(i / 5) * 32]);
+  }
+  return pts.map(function (p) {
+    return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + r + '" fill="var(' + (colorVar || '--c4') + ')" stroke="var(--edge)" stroke-width="2.5"/>';
+  }).join('');
+}
+
+/* ---------- sound ---------- */
+let actx = null;
+function tone(freq, dur, when, type, gain) {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime + (when || 0), o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain || .16, t0 + .02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + .05);
+  } catch (e) { /* no audio */ }
+}
+const SFX = {
+  /* Each block a step higher, so a growing tower sounds like it is growing. */
+  block: function (n) { tone(260 * Math.pow(2, Math.min(n, 20) / 12), .16, 0, 'triangle', .15); },
+  take:  function () { tone(330, .1, 0, 'sine', .12); tone(220, .14, .07, 'sine', .1); },
+  yum:   function () { tone(420, .1, 0, 'triangle'); tone(640, .14, .07, 'triangle'); },
+  nope:  function () { tone(210, .15, 0, 'sine', .11); },
+  boo:   function () { tone(300, .35, 0, 'sine', .12); tone(200, .4, .12, 'sine', .1); },
+  win:   function () { [523, 659, 784, 1046].forEach(function (f, i) { tone(f, .17, i * .085, 'triangle', .14); }); }
+};
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+let voicesReady = false;
+function speak(text, rate) {
+  if (!S.settings.voice || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = speechSynthesis.getVoices();
+    const v = vs.find(function (x) { return /en[-_]GB/i.test(x.lang); }) || vs.find(function (x) { return /^en/i.test(x.lang); });
+    if (v) u.voice = v;
+    u.lang = 'en-GB'; u.rate = rate || .82; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+  } catch (e) { /* no speech */ }
+}
+function confetti(el) {
+  const r = el.getBoundingClientRect();
+  const cs = getComputedStyle(document.documentElement);
+  for (let i = 0; i < 12; i++) {
+    const c = document.createElement('span');
+    c.className = 'confetti';
+    c.style.background = cs.getPropertyValue(MCOL[i % MCOL.length]).trim();
+    c.style.left = (r.left + r.width / 2 - 6) + 'px';
+    c.style.top = (r.top + r.height / 2 - 6) + 'px';
+    const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 90;
+    c.style.setProperty('--dx', Math.cos(a) * d + 'px');
+    c.style.setProperty('--dy', Math.sin(a) * d + 'px');
+    document.body.appendChild(c);
+    setTimeout(function () { c.remove(); }, 950);
+  }
+}
+
+/* ---------- storage ---------- */
+const LS = 'jellyblocks.v1';
+const S = {
+  stars: 0,
+  level: { how: 1, make: 1, munch: 1 },
+  settings: { voice: true, fullscreen: true, ghost: true, max: 5 }
+};
+function load() {
+  try {
+    const l = JSON.parse(localStorage.getItem(LS) || '{}');
+    if (typeof l.stars === 'number') S.stars = l.stars;
+    Object.assign(S.level, l.level || {});
+    Object.assign(S.settings, l.settings || {});
+  } catch (e) { /* private window: nothing kept */ }
+}
+function save() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) { /* not kept */ } }
+
+/* ---------- fullscreen ---------- */
+function installedFullscreen() {
+  return window.matchMedia && (matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: standalone)').matches);
+}
+function goFullscreen() {
+  if (!S.settings.fullscreen || installedFullscreen() || document.fullscreenElement || document.webkitFullscreenElement) return;
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (!req) return;
+  try {
+    const p = req.call(el, { navigationUI: 'hide' });
+    const lock = function () {
+      try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(function () {}); } catch (e) { /* not allowed */ }
+    };
+    if (p && p.then) p.then(lock).catch(function () {}); else lock();
+  } catch (e) { /* not allowed here */ }
+}
+
+/* ---------- screens ---------- */
+const SCREENS = ['scStart', 'scHome', 'scBlocks', 'scHow', 'scMake', 'scMunch', 'scWin', 'scGrown'];
+let current = 'scStart';
+function show(id) {
+  if (current === 'scMunch' && id !== 'scMunch') stopMunch();
+  current = id;
+  SCREENS.forEach(function (s) { document.getElementById(s).hidden = (s !== id); });
+  document.getElementById('navHome').hidden = ['scBlocks', 'scHow', 'scMake', 'scMunch'].indexOf(id) < 0;
+  document.getElementById('navGrown').hidden = id !== 'scHome' && id !== 'scGrown';
+  document.getElementById('navGrown').textContent = id === 'scGrown' ? 'Done' : 'Grown-ups';
+}
+function on(id) { return current === id; }
+function maxN() { return Math.max(3, Math.min(20, Number(S.settings.max) || 5)); }
+function rand(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+function renderHome() {
+  document.getElementById('jarCount').textContent = S.stars;
+  document.getElementById('jarStars').textContent = S.stars ? '⭐'.repeat(Math.min(S.stars, 24)) + (S.stars > 24 ? '…' : '') : '';
+  document.getElementById('picBlocks').innerHTML = towerHTML(3, false);
+  document.getElementById('picHow').innerHTML = '<svg class="dots" viewBox="0 0 100 100" style="width:84px;height:84px">' + dotsSVG(3, '--c3') + '</svg>';
+  document.getElementById('picMake').innerHTML = '<span style="font:700 70px/1 var(--num)">4</span>';
+  document.getElementById('picMunch').innerHTML = '<span style="width:86px;height:86px;display:block">' + monsterSVG(5, '', '--c3') + '</span>';
+}
+
+/* ---------- a tower of blocks, in columns of five ---------- */
+function blockColour(i) { return MCOL[Math.floor(i / 5) % MCOL.length]; }
+function towerHTML(n, dropLast) {
+  let html = '';
+  for (let c = 0; c * 5 < Math.max(n, 1); c++) {
+    html += '<div class="column">';
+    for (let i = c * 5; i < Math.min(n, c * 5 + 5); i++) {
+      const top = i === n - 1;
+      html += '<div class="block' + (dropLast && top ? ' drop' : '') + '" data-i="' + i + '" style="background:var(' + blockColour(i) + ')">' +
+        (top ? '<span class="eyes"><i></i><i></i></span>' : '') + '</div>';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+/* ==========================================================
+   BLOCKS — free play
+   ========================================================== */
+const BL = { n: 0 };
+function openBlocks() { BL.n = 0; drawBlocks(false); show('scBlocks'); speak("Let's build! Tap the green button."); }
+function drawBlocks(drop) {
+  document.getElementById('blkTower').innerHTML = towerHTML(BL.n, drop);
+  document.getElementById('blkN').textContent = BL.n;
+  document.getElementById('blkW').textContent = BL.n ? WORDS[BL.n] : 'tap the green button';
+  document.getElementById('blkAdd').disabled = BL.n >= 20;
+  document.getElementById('blkTake').disabled = BL.n <= 0;
+}
+function blocksAdd() {
+  if (BL.n >= 20) return;
+  BL.n++; SFX.block(BL.n); drawBlocks(true); speak(WORDS[BL.n]);
+}
+function blocksTake() {
+  if (BL.n <= 0) return;
+  BL.n--; SFX.take(); drawBlocks(false); speak(BL.n ? WORDS[BL.n] : 'none left');
+}
+/* Touching a block says which one it is: counting by pointing. */
+function sayBlock(e, n) {
+  const b = e.target.closest('.block');
+  if (!b) return;
+  const i = Number(b.dataset.i);
+  b.classList.remove('wiggle'); void b.offsetWidth; b.classList.add('wiggle');
+  SFX.block(i + 1);
+  speak(WORDS[i + 1]);
+}
+
+/* ==========================================================
+   HOW MANY? — count each block, then choose the number
+   Every block has to be touched once, and says the next number when it is:
+   that is one-to-one counting, the step four-year-olds most often skip.
+   ========================================================== */
+const HW = { q: 0, n: 0, counted: 0, tries: 0, firstTry: 0, rounds: 5 };
+function howTop() { return Math.min(maxN(), 2 + S.level.how); }   // level 1: up to 3
+function openHow() { HW.q = 0; HW.firstTry = 0; show('scHow'); howQuestion(); }
+function pips(id, done, total) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < done ? ' done' : i === done ? ' now' : '');
+    el.appendChild(p);
+  }
+}
+function howQuestion() {
+  if (HW.q >= HW.rounds) {
+    if (HW.firstTry >= HW.rounds - 1) S.level.how = Math.min(18, S.level.how + 1);
+    return winScreen('how', 'You counted ' + HW.rounds + ' times!');
+  }
+  pips('howPips', HW.q, HW.rounds);
+  const top = howTop();
+  let n = rand(1, top);
+  if (n === HW.n && top > 1) n = n === top ? n - 1 : n + 1;
+  HW.n = n; HW.counted = 0; HW.tries = 0;
+  /* Scattered over a grid, not in a line, so they have to keep track of
+     which ones they have touched. */
+  const cells = shuffle(Array.from({ length: 12 }, function (_, i) { return i; })).slice(0, n);
+  const area = document.getElementById('howBlocks');
+  area.innerHTML = '';
+  const colour = MCOL[rand(0, 5)];
+  for (let i = 0; i < 12; i++) {
+    const slot = document.createElement('div');
+    if (cells.indexOf(i) > -1) {
+      const b = document.createElement('button');
+      b.className = 'block';
+      b.style.background = 'var(' + colour + ')';
+      b.setAttribute('aria-label', 'a block');
+      b.addEventListener('click', function () { countBlock(b); });
+      slot.appendChild(b);
+    }
+    area.appendChild(slot);
+  }
+  const answers = document.getElementById('howAnswers');
+  answers.innerHTML = '';
+  answerChoices(n, top).forEach(function (v, i) {
+    const a = document.createElement('button');
+    a.className = 'answer';
+    a.style.background = 'var(' + MCOL[(i * 2 + 1) % MCOL.length] + ')';
+    a.textContent = v;
+    a.addEventListener('click', function () { howAnswer(a, v); });
+    answers.appendChild(a);
+  });
+  document.getElementById('howSay').textContent = 'Tap each block to count it';
+  speak('How many blocks? Tap each one to count.');
+}
+function answerChoices(n, top) {
+  const pool = [];
+  for (let v = 1; v <= Math.max(top, 3); v++) if (v !== n) pool.push(v);
+  /* Neighbours first: telling 4 from 5 is the useful bit, 1 from 9 is not. */
+  pool.sort(function (a, b) { return Math.abs(a - n) - Math.abs(b - n) || Math.random() - .5; });
+  return shuffle([n].concat(pool.slice(0, 2))).sort(function (a, b) { return a - b; });
+}
+function countBlock(b) {
+  if (b.classList.contains('counted')) { b.classList.remove('wiggle'); void b.offsetWidth; b.classList.add('wiggle'); return; }
+  HW.counted++;
+  b.classList.add('counted');
+  b.textContent = HW.counted;
+  SFX.block(HW.counted);
+  speak(WORDS[HW.counted]);
+  if (HW.counted === HW.n) {
+    document.getElementById('howSay').textContent = 'How many? Tap the number';
+    setTimeout(function () { if (on('scHow')) speak('How many?'); }, 900);
+  }
+}
+function howAnswer(el, v) {
+  if (v === HW.n) {
+    if (HW.tries === 0) HW.firstTry++;
+    el.classList.add('yes'); SFX.yum(); confetti(el);
+    speak('Yes! ' + WORDS[v] + '!');
+    HW.q++;
+    setTimeout(function () { if (on('scHow')) howQuestion(); }, 1800);
+  } else {
+    HW.tries++;
+    SFX.nope();
+    el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+    if (HW.tries >= 2) el.classList.add('gone');
+    speak("Let's count them again.");
+    document.querySelectorAll('#howBlocks .block').forEach(function (b) { b.classList.remove('counted'); b.textContent = ''; });
+    HW.counted = 0;
+  }
+}
+
+/* ==========================================================
+   MAKE IT — build a tower of the number shown
+   ========================================================== */
+const MK = { q: 0, target: 0, n: 0, tries: 0, firstTry: 0, rounds: 5 };
+function makeTop() { return Math.min(maxN(), 2 + S.level.make); }
+function openMake() { MK.q = 0; MK.firstTry = 0; show('scMake'); makeQuestion(); }
+function makeQuestion() {
+  if (MK.q >= MK.rounds) {
+    if (MK.firstTry >= MK.rounds - 1) S.level.make = Math.min(18, S.level.make + 1);
+    return winScreen('make', 'You built ' + MK.rounds + ' towers!');
+  }
+  pips('makePips', MK.q, MK.rounds);
+  let t = rand(1, makeTop());
+  if (t === MK.target && makeTop() > 1) t = t === makeTop() ? t - 1 : t + 1;
+  MK.target = t; MK.n = 0; MK.tries = 0;
+  document.getElementById('makeN').textContent = t;
+  const dots = document.getElementById('makeDots');
+  dots.setAttribute('viewBox', '0 0 100 100');
+  dots.innerHTML = dotsSVG(t, '--c3');
+  dots.style.display = t <= 10 ? '' : 'none';
+  document.getElementById('makeSay').textContent = 'Make ' + t;
+  drawMake(false);
+  speak('Make ' + WORDS[t] + '!');
+}
+function drawMake(drop) {
+  document.getElementById('makeTower').innerHTML = towerHTML(MK.n, drop);
+  document.getElementById('makeTake').disabled = MK.n <= 0;
+  document.getElementById('makeAdd').disabled = MK.n >= 20;
+}
+function makeAdd() { if (MK.n >= 20) return; MK.n++; SFX.block(MK.n); drawMake(true); speak(WORDS[MK.n]); }
+function makeTake() { if (MK.n <= 0) return; MK.n--; SFX.take(); drawMake(false); speak(MK.n ? WORDS[MK.n] : 'none'); }
+function makeDone() {
+  const btn = document.getElementById('makeDone');
+  if (MK.n === MK.target) {
+    if (MK.tries === 0) MK.firstTry++;
+    SFX.yum(); confetti(btn);
+    speak('Yes! That is ' + WORDS[MK.target] + '!');
+    MK.q++;
+    setTimeout(function () { if (on('scMake')) makeQuestion(); }, 1900);
+  } else {
+    MK.tries++;
+    SFX.nope();
+    speak(MK.n > MK.target ? 'Too many! Take one away.' : 'More please!');
+  }
+}
+
+/* ==========================================================
+   DREAM MUNCH — walk round the dream and munch the right numbers,
+   while a very slow, very sleepy ghost drifts after you.
+   In the spirit of the old number-munching games, made gentle for a
+   four-year-old: walking is slow, nothing is ever lost, and if the ghost
+   catches you it only says boo and you hop back to the start.
+   ========================================================== */
+const MU = { cols: 3, rows: 3, tiles: [], target: 0, kind: 'num', me: 0, ghost: -1, path: [],
+             walking: null, ghostTimer: null, ghostNap: 0, left: 0, wrong: 0 };
+/* Level by level: numbers to 3, numbers to 5, dot patterns, a mix, then the
+   tiniest sums. Never more than four columns. */
+function munchPlan(level) {
+  const top = Math.min(maxN(), level <= 1 ? 3 : 5 + Math.max(0, level - 6));
+  const kind = level <= 2 ? 'num' : level === 3 ? 'dots' : level <= 5 ? 'mix' : 'sum';
+  return { top: top, kind: kind, cols: level <= 2 ? 3 : 4, rows: level <= 2 ? 3 : 4, targets: level <= 2 ? 3 : 4,
+           ghostStep: Math.max(1800, 3200 - level * 150) };
+}
+function openMunch() {
+  const plan = munchPlan(S.level.munch);
+  MU.cols = plan.cols; MU.rows = plan.rows; MU.kind = plan.kind; MU.wrong = 0;
+  const count = plan.cols * plan.rows;
+  MU.target = rand(plan.kind === 'sum' ? 2 : 1, plan.top);
+  const cells = [];
+  for (let i = 0; i < count; i++) {
+    let v;
+    do { v = rand(1, plan.top); } while (v === MU.target);
+    cells.push(v);
+  }
+  /* Never the start square, so the first munch always needs a walk. */
+  const spots = shuffle(Array.from({ length: count - 1 }, function (_, i) { return i + 1; })).slice(0, plan.targets);
+  spots.forEach(function (i) { cells[i] = MU.target; });
+  MU.left = plan.targets;
+  MU.tiles = cells.map(function (v) {
+    let show = MU.kind;
+    if (show === 'mix') show = Math.random() < .5 ? 'num' : 'dots';
+    let a = 0, b = 0;
+    if (show === 'sum') {
+      if (v < 2) show = 'num';
+      else { a = rand(1, v - 1); b = v - a; }
+    }
+    return { v: v, show: show, a: a, b: b, eaten: false };
+  });
+  MU.me = 0; MU.path = []; MU.ghost = -1;
+  drawBoard();
+  show('scMunch');
+  document.getElementById('munchSay').textContent = 'Munch the';
+  document.getElementById('munchT').textContent = MU.target;
+  const dots = document.getElementById('munchDots');
+  dots.setAttribute('viewBox', '0 0 100 100');
+  dots.innerHTML = dotsSVG(MU.target, '--c3');
+  dots.style.display = MU.target <= 10 ? '' : 'none';
+  sayMunchTarget();
+  clearTimeout(MU.ghostTimer);
+  if (S.settings.ghost) MU.ghostTimer = setTimeout(function () { ghostArrive(plan.ghostStep); }, 6000);
+}
+function sayMunchTarget() {
+  const word = WORDS[MU.target];
+  const plural = MU.target === 6 ? 'sixes' : word + 's';
+  speak(MU.kind === 'sum' ? 'Munch everything that makes ' + word + '!' : 'Munch all the ' + plural + '!');
+}
+function tileHTML(t) {
+  if (t.show === 'dots') return '<svg class="dots" viewBox="0 0 100 100">' + dotsSVG(t.v, '--c4') + '</svg>';
+  if (t.show === 'sum') return '<span class="sum">' + t.a + '+' + t.b + '</span>';
+  return '<span>' + t.v + '</span>';
+}
+function drawBoard() {
+  const board = document.getElementById('board');
+  board.style.gridTemplateColumns = 'repeat(' + MU.cols + ', 1fr)';
+  board.innerHTML = '';
+  MU.tiles.forEach(function (t, i) {
+    const b = document.createElement('button');
+    b.className = 'tile' + (t.eaten ? ' eaten' : '');
+    b.innerHTML = tileHTML(t);
+    b.setAttribute('aria-label', t.show === 'sum' ? t.a + ' plus ' + t.b : String(t.v));
+    b.addEventListener('click', function () { walkTo(i); });
+    board.appendChild(b);
+  });
+  const me = document.createElement('div');
+  me.className = 'sprite'; me.id = 'me';
+  me.innerHTML = monsterSVG(5, '', '--c3');
+  board.appendChild(me);
+  const gh = document.createElement('div');
+  gh.className = 'sprite ghost'; gh.id = 'ghost'; gh.hidden = true;
+  gh.innerHTML = ghostSVG() + '<span class="zz" hidden>z</span>';
+  board.appendChild(gh);
+  requestAnimationFrame(function () { place('me', MU.me); });
+}
+function place(id, i) {
+  const board = document.getElementById('board');
+  const tile = board.children[i];
+  const el = document.getElementById(id);
+  if (!tile || !el) return;
+  /* Small and tucked into the bottom corner, so the number on the square he
+     is standing on stays readable: that is the thing he has to check. */
+  const size = tile.offsetWidth * .52;
+  el.style.width = size + 'px'; el.style.height = size + 'px';
+  const right = id === 'me';
+  el.style.left = (tile.offsetLeft + (right ? tile.offsetWidth - size * .92 : -size * .08)) + 'px';
+  el.style.top = (tile.offsetTop + tile.offsetHeight - size * .95) + 'px';
+}
+function rc(i) { return [Math.floor(i / MU.cols), i % MU.cols]; }
+/* Across first, then down: easy for a small child to predict and follow. */
+function pathTo(from, to) {
+  const out = [];
+  let [r, c] = rc(from);
+  const [tr, tc] = rc(to);
+  while (c !== tc) { c += c < tc ? 1 : -1; out.push(r * MU.cols + c); }
+  while (r !== tr) { r += r < tr ? 1 : -1; out.push(r * MU.cols + c); }
+  return out;
+}
+function walkTo(i) {
+  if (!on('scMunch')) return;
+  if (i === MU.me && !MU.walking) return munch();
+  MU.path = pathTo(MU.me, i);
+  if (!MU.walking) step();
+}
+function step() {
+  if (!on('scMunch')) { MU.walking = null; return; }
+  if (!MU.path.length) { MU.walking = null; return munch(); }
+  MU.me = MU.path.shift();
+  place('me', MU.me);
+  tone(380 + (MU.path.length % 3) * 40, .06, 0, 'sine', .06);
+  if (MU.me === MU.ghost) return caught();
+  /* Slow on purpose: half a second a square is easy to watch and to aim. */
+  MU.walking = setTimeout(step, 560);
+}
+function munch() {
+  const t = MU.tiles[MU.me];
+  if (!t || t.eaten) return;
+  const tileEl = document.getElementById('board').children[MU.me];
+  const me = document.getElementById('me');
+  me.classList.remove('chomp'); void me.offsetWidth; me.classList.add('chomp');
+  if (t.v === MU.target) {
+    t.eaten = true; MU.left--;
+    tileEl.classList.add('eaten');
+    SFX.yum(); confetti(tileEl);
+    speak(MU.left ? 'Yum! ' + WORDS[MU.target] + '!' : 'Yum! All gone!');
+    if (!MU.left) {
+      clearTimeout(MU.ghostTimer);
+      setTimeout(function () {
+        if (!on('scMunch')) return;
+        if (MU.wrong <= 2) S.level.munch = Math.min(9, S.level.munch + 1);
+        winScreen('munch', 'You munched them all!');
+      }, 1400);
+    }
+  } else {
+    MU.wrong++;
+    SFX.nope();
+    tileEl.classList.remove('nope'); void tileEl.offsetWidth; tileEl.classList.add('nope');
+    const said = t.show === 'sum' ? t.a + ' and ' + t.b + ' makes ' + WORDS[t.v] : 'That is ' + WORDS[t.v];
+    speak('Oops! ' + said + '. Find ' + WORDS[MU.target] + '.');
+  }
+}
+/* ---------- the ghost ---------- */
+function ghostArrive(stepMs) {
+  if (!on('scMunch') || !S.settings.ghost) return;
+  /* In from the far corner, away from the jelly. */
+  const corners = [0, MU.cols - 1, MU.tiles.length - MU.cols, MU.tiles.length - 1];
+  corners.sort(function (a, b) { return dist(b, MU.me) - dist(a, MU.me); });
+  MU.ghost = corners[0];
+  const gh = document.getElementById('ghost');
+  gh.hidden = false;
+  place('ghost', MU.ghost);
+  speak('Oooh, a sleepy ghost!');
+  MU.ghostNap = 0;
+  MU.ghostTimer = setTimeout(function () { ghostStep(stepMs); }, stepMs);
+}
+function dist(a, b) { const [r1, c1] = rc(a), [r2, c2] = rc(b); return Math.abs(r1 - r2) + Math.abs(c1 - c2); }
+function ghostStep(stepMs) {
+  if (!on('scMunch') || MU.ghost < 0) return;
+  const gh = document.getElementById('ghost');
+  const zz = gh.querySelector('.zz');
+  /* Every so often it nods off for a few seconds: a chance to get away. */
+  if (MU.ghostNap > 0) {
+    MU.ghostNap--;
+    if (!MU.ghostNap) { gh.classList.remove('asleep'); zz.hidden = true; }
+  } else if (Math.random() < .22) {
+    MU.ghostNap = 2;
+    gh.classList.add('asleep'); zz.hidden = false;
+  } else {
+    const next = pathTo(MU.ghost, MU.me)[0];
+    if (next !== undefined) { MU.ghost = next; place('ghost', MU.ghost); }
+    if (MU.ghost === MU.me) return caught();
+  }
+  MU.ghostTimer = setTimeout(function () { ghostStep(stepMs); }, stepMs);
+}
+function caught() {
+  clearTimeout(MU.walking); MU.walking = null; MU.path = [];
+  clearTimeout(MU.ghostTimer);
+  const gh = document.getElementById('ghost');
+  gh.classList.remove('boo'); void gh.offsetWidth; gh.classList.add('boo');
+  SFX.boo();
+  speak('Boo! Back to the start.');
+  /* Nothing is lost: the jelly just hops home, and the ghost floats back to
+     its corner and has a little sleep. */
+  setTimeout(function () {
+    if (!on('scMunch')) return;
+    const free = MU.tiles.map(function (_, i) { return i; }).filter(function (i) { return i !== MU.ghost; });
+    free.sort(function (a, b) { return dist(b, MU.ghost) - dist(a, MU.ghost); });
+    MU.me = free[0];
+    place('me', MU.me);
+    const plan = munchPlan(S.level.munch);
+    MU.ghostNap = 3; gh.classList.add('asleep'); gh.querySelector('.zz').hidden = false;
+    MU.ghostTimer = setTimeout(function () { ghostStep(plan.ghostStep); }, plan.ghostStep);
+  }, 1100);
+}
+function stopMunch() { clearTimeout(MU.walking); clearTimeout(MU.ghostTimer); MU.walking = null; MU.ghost = -1; }
+window.addEventListener('resize', function () {
+  if (!on('scMunch')) return;
+  place('me', MU.me);
+  if (MU.ghost >= 0) place('ghost', MU.ghost);
+});
+
+/* ==========================================================
+   WELL DONE
+   ========================================================== */
+let lastGame = 'blocks';
+function winScreen(game, line) {
+  lastGame = game;
+  S.stars++;
+  save();
+  document.getElementById('winTitle').textContent = 'You did it!';
+  document.getElementById('winCast').innerHTML = monsterSVG(rand(1, 999), '', MCOL[rand(0, 5)]);
+  document.getElementById('winLine').textContent = line + ' One more star for the jar.';
+  SFX.win();
+  show('scWin');
+  speak('You did it! A star for your jar!');
+}
+function again() {
+  if (lastGame === 'how') openHow();
+  else if (lastGame === 'make') openMake();
+  else if (lastGame === 'munch') openMunch();
+  else openBlocks();
+}
+
+/* ==========================================================
+   GROWN-UPS
+   ========================================================== */
+function openGrown() {
+  document.getElementById('optVoice').checked = !!S.settings.voice;
+  document.getElementById('optFull').checked = !!S.settings.fullscreen;
+  document.getElementById('optGhost').checked = !!S.settings.ghost;
+  document.getElementById('optMax').value = String(S.settings.max);
+  document.getElementById('grownStats').textContent =
+    S.stars + ' stars so far. How many? is counting to ' + howTop() + ', Make it to ' + makeTop() +
+    ', and Dream Munch is on level ' + S.level.munch + '.';
+  show('scGrown');
+}
+function bindSetting(id, key, value) {
+  document.getElementById(id).addEventListener('change', function (e) {
+    S.settings[key] = value(e.target);
+    save();
+  });
+}
+
+/* ==========================================================
+   WIRING
+   ========================================================== */
+load();
+document.getElementById('markSlot').innerHTML = monsterSVG(5, '', '--c3');
+document.getElementById('startCast').innerHTML = monsterSVG(5, '', '--c3');
+
+document.getElementById('startTap').addEventListener('click', function () {
+  try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) { /* no audio */ }
+  goFullscreen();
+  renderHome();
+  show('scHome');
+  SFX.win();
+  speak("Let's play!");
+});
+/* Fullscreen by default: if it has been knocked out of fullscreen (the back
+   gesture does that), the next tap anywhere puts it back. */
+document.addEventListener('pointerdown', function () { if (current !== 'scStart' && current !== 'scGrown') goFullscreen(); });
+
+document.getElementById('goBlocks').addEventListener('click', openBlocks);
+document.getElementById('goHow').addEventListener('click', openHow);
+document.getElementById('goMake').addEventListener('click', openMake);
+document.getElementById('goMunch').addEventListener('click', openMunch);
+document.getElementById('navHome').addEventListener('click', function () {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  renderHome(); show('scHome');
+});
+
+document.getElementById('blkAdd').addEventListener('click', blocksAdd);
+document.getElementById('blkTake').addEventListener('click', blocksTake);
+document.getElementById('blkTower').addEventListener('click', function (e) { sayBlock(e); });
+document.getElementById('makeTower').addEventListener('click', function (e) { sayBlock(e); });
+document.getElementById('howHear').addEventListener('click', function () { speak(HW.counted === HW.n ? 'How many?' : 'Tap each block to count it.'); });
+document.getElementById('makeAdd').addEventListener('click', makeAdd);
+document.getElementById('makeTake').addEventListener('click', makeTake);
+document.getElementById('makeDone').addEventListener('click', makeDone);
+document.getElementById('makeHear').addEventListener('click', function () { speak('Make ' + WORDS[MK.target] + '!'); });
+document.getElementById('munchHear').addEventListener('click', sayMunchTarget);
+document.getElementById('winAgain').addEventListener('click', again);
+document.getElementById('winHome').addEventListener('click', function () { renderHome(); show('scHome'); });
+
+/* Hold to open the grown-up side; leaving it is a normal tap. */
+(function () {
+  const btn = document.getElementById('navGrown');
+  let timer = null;
+  btn.addEventListener('pointerdown', function () {
+    if (current === 'scGrown') return;
+    timer = setTimeout(function () { timer = null; openGrown(); }, 700);
+  });
+  const cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
+  btn.addEventListener('pointerup', cancel);
+  btn.addEventListener('pointerleave', cancel);
+  btn.addEventListener('pointercancel', cancel);
+  btn.addEventListener('click', function () { if (current === 'scGrown') { renderHome(); show('scHome'); } });
+})();
+document.getElementById('grownDone').addEventListener('click', function () { renderHome(); show('scHome'); });
+bindSetting('optVoice', 'voice', function (el) { return el.checked; });
+bindSetting('optFull', 'fullscreen', function (el) { return el.checked; });
+bindSetting('optGhost', 'ghost', function (el) { return el.checked; });
+bindSetting('optMax', 'max', function (el) { return Number(el.value); });
+document.getElementById('optReset').addEventListener('click', function () {
+  if (!confirm('Start the levels again from the beginning? The stars stay in the jar.')) return;
+  S.level = { how: 1, make: 1, munch: 1 };
+  save(); openGrown();
+});
+
+if (window.speechSynthesis) {
+  speechSynthesis.getVoices();
+  speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', function () { voicesReady = true; });
+}
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* file:// or no https */ });
+  });
+}
+</script>
+</body>
+</html>

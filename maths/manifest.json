@@ -1,0 +1,16 @@
+{
+  "name": "Jelly Blocks Maths",
+  "short_name": "Jelly Blocks",
+  "description": "First counting for four-year-olds — tap the blocks, count them, build numbers and munch them in a sleepy dream.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#241438",
+  "theme_color": "#241438",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
