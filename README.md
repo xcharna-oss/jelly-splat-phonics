@@ -105,6 +105,10 @@ The backup holds words, progress, stories, stickers and stats. It does **not**
 include voice recordings or page photos — those are larger and stay on the phone
 they were made on.
 
+**⤒ Restore** also takes a single-book file (`*.jellysplat-book.json`): that one
+*adds* the book, with its words, sentences and page photos, and changes nothing
+else. Handy for a book typed up or photographed somewhere else.
+
 ---
 
 ## Credits

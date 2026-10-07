@@ -3633,7 +3633,7 @@ async function saveBook(title, pages, chosen) {
   const saved = [];
   for (let i = 0; i < pages.length; i++) {
     const key = 'pg:' + id + ':' + i;
-    const ok = await idbPut(key, pages[i].blob);
+    const ok = pages[i].blob ? await idbPut(key, pages[i].blob) : false;
     saved.push({ pageKey: ok ? key : null, lines: pages[i].lines });
   }
   S.books[id] = { pages: saved, title: name, at: Date.now() };
@@ -3841,13 +3841,14 @@ function makeSheet() {
   setTimeout(function () { sheet.appendChild(done); }, 0);
   return { body: sheet, close: close };
 }
-function confirmSheet(title, note, onYes) {
+function confirmSheet(title, note, onYes, yesLabel) {
   const s = makeSheet();
   const h = document.createElement('h3'); h.textContent = title;
   const p = document.createElement('p'); p.className = 'note'; p.textContent = note;
   const row = document.createElement('div'); row.className = 'row';
   const yes = document.createElement('button');
-  yes.className = 'btn danger'; yes.textContent = 'Yes, delete';
+  yes.className = yesLabel ? 'btn go' : 'btn danger';
+  yes.textContent = yesLabel || 'Yes, delete';
   yes.addEventListener('click', function () { s.close(); onYes(); });
   row.appendChild(yes);
   s.body.appendChild(h); s.body.appendChild(p); s.body.appendChild(row);
@@ -3880,6 +3881,29 @@ function backupNow() {
   setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   toast('Backup saved to your downloads');
 }
+/* A single book, made somewhere else (with its words, sentences and page
+   photos) and added to this phone's books. Unlike a backup, it adds rather
+   than replaces: nothing he has done is touched. */
+function importBook(d) {
+  const title = String(d.title || 'This week\'s book');
+  confirmSheet('Add “' + title + '”?',
+    'It is added as a new book, with its words and pages. Nothing else on this phone changes.',
+    async function () {
+      const pages = [];
+      for (const pg of (d.pages || [])) {
+        let blob = null;
+        if (pg.photo) {
+          try { blob = await (await fetch(pg.photo)).blob(); } catch (e) { blob = null; }
+        }
+        pages.push({ blob: blob, lines: (pg.lines || []).map(String) });
+      }
+      const chosen = {};
+      (d.words || []).forEach(function (w) {
+        if (w && w.t) chosen[String(w.t)] = w.kind === 'tricky' ? 'tricky' : 'word';
+      });
+      await saveBook(title, pages, chosen);
+    }, 'Yes, add the book');
+}
 function restoreNow() {
   const input = document.createElement('input');
   input.type = 'file';
@@ -3894,6 +3918,7 @@ function restoreNow() {
     r.onload = function () {
       let d = null;
       try { d = JSON.parse(String(r.result)); } catch (e) { d = null; }
+      if (d && d.kind === 'jellysplat-book') { importBook(d); return; }
       if (!d || !d.progress) { toast('That is not a Jelly Splat backup'); return; }
       confirmSheet('Restore this backup?',
         'It replaces the words and progress on this phone. Recordings and page photos ' +
