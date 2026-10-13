@@ -40,7 +40,9 @@ a time; the next batch and the **Stretch round** unlock once the current six are
 
 - **Splat the jelly** — hear a word or sound, tap the monster showing it.
 - **Build the word** — the letters come scrambled, tap them in order.
-- **Write the letters** — trace with a finger, scored out of three stars.
+- **Write the words** — each word from the current batch is said aloud, traced a
+  letter at a time, then traced whole, with its sentence from the book underneath.
+  Scored out of three stars. (A sounds set traces single letters.)
 - **Stories** — twelve built-in stories, pick a topic and it reads one.
 - **Read the book** — your own photographed pages, every word tappable to hear.
 - **Stickers** — a jelly monster for every finished round.

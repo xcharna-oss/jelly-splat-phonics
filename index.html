@@ -414,6 +414,15 @@
   .tracebox canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .bigstars { font-size: 30px; letter-spacing: 4px; min-height: 38px; line-height: 1.2; }
   .bigstars .dim { opacity: .2; }
+  .recword .tw { display: inline-flex; gap: 3px; cursor: pointer; }
+  .recword .tw span { padding: 0 3px; color: var(--ink-soft); border-bottom: 4px solid var(--hair); }
+  .recword .tw span.now { color: var(--c4); border-color: var(--c4); }
+  .recword .tw span.done { color: var(--ink); border-color: var(--c2); }
+  .tracesent {
+    margin: 0; max-width: 320px; min-height: 27px;
+    font-family: var(--letter); font-size: 19px; line-height: 1.4;
+  }
+  .tracesent b { color: var(--c1); }
 
   /* book pages */
   .pagewrap {
@@ -678,9 +687,10 @@
 
   <!-- ===== TRACE ===== -->
   <main class="screen" id="scTrace" hidden>
-    <h2 class="sect">Write the letters</h2>
+    <h2 class="sect"><span id="traceTitle">Write the letters</span></h2>
     <div class="recstage">
       <div class="recword" id="traceWord">a<small id="traceHow"></small></div>
+      <p class="tracesent" id="traceSent"></p>
       <div class="tracebox">
         <canvas id="traceGuide" width="600" height="600"></canvas>
         <canvas id="traceInk" width="600" height="600"></canvas>
@@ -695,8 +705,10 @@
       <button class="tbtn" id="traceDone">Finish</button>
     </div>
     <p class="note" style="margin-top:16px">
-      Trace with a finger. This checks the <b>shape</b> he draws, not the order of the strokes —
-      school teaches the stroke order, and the line under each letter is the reminder.
+      Each word from the book is said aloud, written a letter at a time, then written whole, with its
+      sentence from the book underneath. Tap the word to hear it again. This checks the <b>shape</b> he
+      draws, not the order of the strokes — school teaches the stroke order, and the line under each
+      letter is the reminder.
     </p>
   </main>
 
@@ -2170,6 +2182,8 @@ function renderHome() {
   document.getElementById('startBtn').disabled = !sel;
   const pages = sel && S.books[sel.id] && S.books[sel.id].pages;
   document.getElementById('bookBtn').hidden = !(pages && pages.length);
+  document.getElementById('traceBtn').textContent =
+    sel && sel.kind === 'sound' ? '✎ Write the letters' : '✎ Write the words';
 
   const eyebrow = document.getElementById('heroBatch');
   const chips = document.getElementById('batchChips');
@@ -2406,10 +2420,13 @@ function renderReport() {
   if (!host.children.length) {
     host.innerHTML = '<p class="note" style="margin:0">Nothing practised yet — play a round and this fills in.</p>';
   }
-  const w = Object.keys(S.write).filter(function (k) { return S.write[k].stars >= 2; }).length;
+  const neat = Object.keys(S.write).filter(function (k) { return S.write[k].stars >= 2; });
+  const ww = neat.filter(function (k) { return k.indexOf('w:') === 0; }).length;
+  const w = neat.length - ww;
   document.getElementById('rpNote').textContent =
     'Green is confident, amber is under way. ' +
     (w ? w + ' letters written neatly. ' : '') +
+    (ww ? ww + ' whole word' + (ww === 1 ? '' : 's') + ' written. ' : '') +
     'Handy for the reading record: ' + d7 + ' day' + (d7 === 1 ? '' : 's') +
     ' this week, ' + q7 + ' words practised.';
 }
@@ -2551,43 +2568,101 @@ const FORM = {
   w: 'down, up, down, up', x: 'one slant across, then the other',
   y: 'down to a point, up, then down and hook', z: 'across, slant back, across again'
 };
-const TR = { list: [], i: 0, masks: null, drawing: false, inked: false, stars: {} };
+const TR = { steps: [], i: 0, set: null, wrote: 0, masks: null, drawing: false, inked: false, inkWidth: 30 };
 function starRow(n) {
   let out = '';
   for (let i = 0; i < 3; i++) out += i < n ? '<span>★</span>' : '<span class="dim">★</span>';
   return out;
 }
 
-function traceList() {
-  const set = getSet(S.selectedSet);
-  if (!set) return ['s', 'a', 't'];
-  const items = batchInfo(set).items;
-  const out = [], seen = {};
-  items.forEach(function (it) {
-    const gs = it.kind === 'sound' ? [it.t] : splitWord(it.t);
-    gs.forEach(function (g) { if (!seen[g]) { seen[g] = true; out.push(g); } });
+/* One word at a time from the batch he is working on: each of its letters in
+   order, then the whole word. Writing a word is what fixes its spelling, and
+   loose letters taught him none of the book. A sounds set is still one shape
+   per step. */
+function traceSteps(set) {
+  const out = [];
+  if (!set) return out;
+  batchInfo(set).items.forEach(function (it) {
+    if (it.kind === 'sound') { out.push({ it: it, gs: [it.t], g: 0, ch: it.t, whole: false }); return; }
+    /* a one-letter word keeps its own case: 'I', not 'i' */
+    const gs = String(it.t).length === 1 ? [String(it.t)] : splitWord(it.t);
+    gs.forEach(function (g, k) { out.push({ it: it, gs: gs, g: k, ch: g, whole: false }); });
+    if (String(it.t).length > 1) out.push({ it: it, gs: gs, g: gs.length, ch: String(it.t), whole: true });
   });
-  return out.length ? out : ['s', 'a', 't'];
+  return out;
+}
+/* The voice for an item with no mouth to animate: his grown-up's recording,
+   else the free one, else the robot if it is switched on. */
+async function sayItem(it, ownOnly) {
+  const own = await ownRecording(it);
+  if (own) { playOwn(own.url); return; }
+  if (ownOnly) return;
+  const lib = libWordFor(it);
+  if (lib) playSprite(lib);
+  else robot(it.kind === 'sound' ? (it.eg || it.t) : it.t, .72);
+}
+function sayTraceWord() {
+  const st = TR.steps[TR.i];
+  if (st) sayItem(st.it, st.it.kind === 'sound');
 }
 async function openTrace() {
-  TR.list = traceList();
+  TR.set = getSet(S.selectedSet);
+  TR.steps = traceSteps(TR.set);
+  if (!TR.steps.length) {
+    TR.steps = ['s', 'a', 't'].map(function (g) { return { it: soundItem(g), gs: [g], g: 0, ch: g, whole: false }; });
+  }
   TR.i = 0;
+  TR.wrote = 0;
+  document.getElementById('traceTitle').textContent =
+    TR.set && TR.set.kind === 'word' ? 'Write the words' : 'Write the letters';
   show('scTrace');
   try { await document.fonts.load('700 200px Andika'); } catch (e) { /* fallback face */ }
   traceStep();
 }
 function traceStep() {
-  const ch = TR.list[TR.i];
-  if (!ch) { renderAll(); show('scHome'); toast('Nice writing!'); return; }
-  document.getElementById('traceWord').innerHTML =
-    esc(ch) + '<small>' + esc(FORM[ch] || 'trace the shape') + '</small>';
-  document.getElementById('traceProg').textContent = (TR.i + 1) + ' of ' + TR.list.length;
+  const st = TR.steps[TR.i];
+  if (!st) {
+    renderAll();
+    show('scHome');
+    toast(TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') +
+      (TR.set ? ' from ' + TR.set.name : '') + '!' : 'Nice writing!');
+    return;
+  }
+  const isWord = st.it.kind !== 'sound';
+  const head = document.getElementById('traceWord');
+  if (isWord) {
+    head.innerHTML = '<span class="tw">' + st.gs.map(function (g, k) {
+      return '<span class="' + (st.whole || k < st.g ? 'done' : k === st.g ? 'now' : '') + '">' + esc(g) + '</span>';
+    }).join('') + '</span><small>' +
+      esc(st.whole ? 'now write the whole word' : FORM[st.ch] || 'trace the shape') + '</small>';
+  } else {
+    head.innerHTML = esc(st.ch) + '<small>' + esc(FORM[st.ch] || 'trace the shape') + '</small>';
+  }
+  document.getElementById('traceSent').innerHTML = (isWord && sentenceHTML(st.it)) || '';
+
+  const items = TR.steps.map(function (x) { return x.it; }).filter(function (x, k, a) { return a.indexOf(x) === k; });
+  let prog = (isWord ? 'Word ' : '') + (items.indexOf(st.it) + 1) + ' of ' + items.length;
+  if (isWord) prog += st.whole ? ' · whole word' : ' · letter ' + (st.g + 1) + ' of ' + st.gs.length;
+  if (isWord && TR.set) prog = TR.set.name + ' · ' + prog;
+  document.getElementById('traceProg').textContent = prog;
   document.getElementById('traceStars').innerHTML = '';
-  drawGuide(ch);
+  drawGuide(st.ch);
   clearInk();
-  TR.masks = buildMasks(ch);
+  TR.masks = buildMasks(st.ch);
+  /* hear the word before he starts on it */
+  if (isWord && st.g === 0) setTimeout(function () { if (TR.steps[TR.i] === st) sayTraceWord(); }, 300);
 }
 function glyphFont(ch, size) { return '700 ' + size + 'px Andika, "Comic Sans MS", sans-serif'; }
+/* A whole word has to fit the box, so it shrinks to the width. */
+function glyphSize(c, ch, N) {
+  let size = ch.length > 1 ? N * 0.42 : N * 0.62;
+  c.font = glyphFont(ch, size);
+  const w = c.measureText(ch).width;
+  if (w > N * 0.86) size *= N * 0.86 / w;
+  return size;
+}
+/* The finger line and the "close enough" zone thin out with the letters. */
+function strokeFor(size, N) { return Math.max(16, Math.min(30, 30 * size / (N * 0.42))); }
 function drawGuide(ch) {
   const c = document.getElementById('traceGuide');
   const x = c.getContext('2d');
@@ -2596,7 +2671,9 @@ function drawGuide(ch) {
   const cs = getComputedStyle(document.documentElement);
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  x.font = glyphFont(ch, ch.length > 1 ? N * 0.42 : N * 0.62);
+  const size = glyphSize(x, ch, N);
+  TR.inkWidth = strokeFor(size, N);
+  x.font = glyphFont(ch, size);
   x.fillStyle = (cs.getPropertyValue('--hair') || 'rgba(0,0,0,.14)').trim();
   x.fillText(ch, N / 2, N / 2);
   x.lineWidth = 3;
@@ -2612,7 +2689,8 @@ function buildMasks(ch) {
   const c = cv.getContext('2d');
   c.textAlign = 'center';
   c.textBaseline = 'middle';
-  c.font = glyphFont(ch, ch.length > 1 ? N * 0.42 : N * 0.62);
+  const size = glyphSize(c, ch, N);
+  c.font = glyphFont(ch, size);
   c.fillStyle = '#000';
   c.strokeStyle = '#000';
   c.lineJoin = 'round';
@@ -2623,7 +2701,7 @@ function buildMasks(ch) {
   c.strokeText(ch, N / 2, N / 2);
   const md = c.getImageData(0, 0, N, N).data;
   c.clearRect(0, 0, N, N);
-  c.lineWidth = 30;                    /* fattened letter = the "close enough" zone */
+  c.lineWidth = strokeFor(size, N);    /* fattened letter = the "close enough" zone */
   c.strokeText(ch, N / 2, N / 2);
   c.fillText(ch, N / 2, N / 2);
   const zd = c.getImageData(0, 0, N, N).data;
@@ -2659,6 +2737,7 @@ function setupTraceCanvas() {
     last = inkPos(e);
     try { c.setPointerCapture(e.pointerId); } catch (err) { /* older browser */ }
     x.strokeStyle = (getComputedStyle(document.documentElement).getPropertyValue('--c4') || '#4A7DD6').trim();
+    x.lineWidth = TR.inkWidth;
     x.beginPath();
     x.moveTo(last.x, last.y);
     x.lineTo(last.x + 0.1, last.y + 0.1);
@@ -2703,26 +2782,40 @@ function scoreTrace() {
   };
 }
 function checkTrace() {
-  const ch = TR.list[TR.i];
+  const st = TR.steps[TR.i];
   const s = scoreTrace();
   const out = document.getElementById('traceStars');
+  if (!st) return;
   if (!s || s.inked < 150) {
     out.textContent = '';
-    toast('Trace over the dotted letter first');
+    toast(st.whole ? 'Trace over the dotted word first' : 'Trace over the dotted letter first');
     return;
   }
+  /* a whole word is a lot of small shapes for one finger: ask a little less */
+  const ease = st.whole ? 0.1 : 0;
   let stars = 0;
-  if (s.coverage >= 0.40) stars = 1;
-  if (s.coverage >= 0.60 && s.neat >= 0.70) stars = 2;
-  if (s.coverage >= 0.74 && s.neat >= 0.84) stars = 3;
+  if (s.coverage >= 0.40 - ease) stars = 1;
+  if (s.coverage >= 0.60 - ease && s.neat >= 0.70 - ease) stars = 2;
+  if (s.coverage >= 0.74 - ease && s.neat >= 0.84 - ease) stars = 3;
   out.innerHTML = starRow(stars);
   if (stars >= 2) { SFX.win(); splatAt(document.querySelector('.tracebox')); }
   else SFX.nope();
-  const best = Math.max(stars, (S.write[ch] && S.write[ch].stars) || 0);
-  S.write[ch] = { stars: best, at: Date.now() };
-  saveDoc('write/' + ch.replace(/[^a-z0-9]/g, '_'), S.write[ch]);
+  const key = st.whole ? 'w:' + st.ch.toLowerCase() : st.ch;
+  const best = Math.max(stars, (S.write[key] && S.write[key].stars) || 0);
+  S.write[key] = { stars: best, at: Date.now() };
+  saveDoc('write/' + key.replace(/[^a-z0-9]/g, '_'), S.write[key]);
   lsWrite();
-  if (stars >= 2) setTimeout(function () { TR.i++; traceStep(); }, 1200);
+  if (stars < 2) return;
+  const isWord = st.it.kind !== 'sound';
+  const last = isWord && (st.whole || (st.g === st.gs.length - 1 && String(st.it.t).length < 2));
+  if (last) TR.wrote++;
+  /* the sound of the letter he just wrote, or the word once it is finished */
+  setTimeout(function () {
+    if (TR.steps[TR.i] !== st) return;
+    if (last) sayItem(st.it, false);
+    else if (isWord) sayItem(soundItem(st.ch), true);
+  }, 450);
+  setTimeout(function () { if (TR.steps[TR.i] === st) { TR.i++; traceStep(); } }, last ? 1900 : 1200);
 }
 
 /* ==========================================================
@@ -4034,6 +4127,7 @@ document.getElementById('mwHome').addEventListener('click', function () { render
 document.getElementById('traceClear').addEventListener('click', clearInk);
 document.getElementById('traceCheck').addEventListener('click', checkTrace);
 document.getElementById('traceNext').addEventListener('click', function () { TR.i++; traceStep(); });
+document.getElementById('traceWord').addEventListener('click', sayTraceWord);
 document.getElementById('traceDone').addEventListener('click', function () {
   renderAll();
   show('scHome');
