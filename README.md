@@ -51,6 +51,11 @@ a time; the next batch and the **Stretch round** unlock once the current six are
   Pictures with a real voice (yours, or a free one) come up first.
 - **Jelly pairs** — a memory game. Every jelly says its sound as it turns over; find
   the two that match. The board grows from three pairs to four after a tidy round.
+- **Tea or key?** — two pictures whose words differ only in the first sound (tea/key,
+  tap/cap). You say one and he taps it, ten goes on one pair; then swap, and he says
+  one while you tap the one you heard. For children who say "tat" for "cat".
+- **Clap it** — tap the drum once for each beat in the word. Wrong, and the word is
+  clapped out for him before he tries again.
 - **Progress** — what's confident, what needs another look, and a weekly line you
   can copy into the school reading record.
 

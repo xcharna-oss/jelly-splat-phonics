@@ -554,6 +554,32 @@
   .minimouth .tag { display: none; }
   .pairs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; }
   .pairs.four { grid-template-columns: repeat(4, 1fr); }
+
+  /* ---------- tea or key & clap it ---------- */
+  .cue { font-size: 13px; font-weight: 600; color: var(--ink-soft); text-align: center; text-wrap: balance; }
+  .cue b { color: var(--ink); font-family: var(--letter); font-size: 21px; }
+  .duo {
+    flex: 1; min-height: 210px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    align-content: center; justify-items: center;
+  }
+  .duo figure { margin: 0; width: 100%; display: grid; gap: 6px; justify-items: center; }
+  .duo figcaption { font-family: var(--letter); font-weight: 700; font-size: 18px; color: var(--ink-soft); }
+  .duo .picture { width: 100%; max-width: 160px; height: auto; aspect-ratio: 1/1; font-size: 82px; }
+  .picture.shake { animation: shake .45s ease; }
+  .picture.sayme { outline: 5px solid var(--c3); outline-offset: 5px; animation: pulse 1s ease-in-out infinite; }
+  .beats { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; align-items: center; justify-content: center; }
+  .beats i { width: 22px; height: 22px; border-radius: 50%; background: var(--c4); display: block; }
+  .beats span {
+    font-family: var(--letter); font-weight: 700; font-size: 24px; padding: 2px 9px;
+    border-radius: 10px; border: 2px solid var(--hair);
+  }
+  .beats span.on { background: var(--c3); color: #1F2430; border-color: var(--edge); }
+  .drum {
+    width: 170px; height: 170px; border-radius: 50%; border: 3px solid var(--edge);
+    background: var(--c5); font-size: 84px; line-height: 1; box-shadow: 0 7px 0 var(--edge);
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .drum:active { transform: translateY(6px); box-shadow: 0 1px 0 var(--edge); }
   .card {
     position: relative; aspect-ratio: 1 / 1.08; border: 0; padding: 0; background: none;
     cursor: pointer; perspective: 600px;
@@ -602,6 +628,10 @@
       <div class="row" style="gap:8px">
         <button class="half-btn" id="firstBtn">🍎 First sounds</button>
         <button class="half-btn" id="pairsBtn">🃏 Jelly pairs</button>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="half-btn" id="earBtn">🔑 Tea or key?</button>
+        <button class="half-btn" id="clapBtn">👏 Clap it</button>
       </div>
       <p id="heroSub">Pick a set and go</p>
     </div>
@@ -739,6 +769,35 @@
       <div class="ask" id="prAsk">Find two the same</div>
       <div class="mouthbox minimouth" id="prMouth"></div>
       <div class="pairs" id="prGrid"></div>
+    </div>
+  </main>
+
+  <!-- ===== TEA OR KEY ===== -->
+  <main class="screen" id="scEar" hidden>
+    <div class="gamewrap">
+      <div class="pips" id="erPips"></div>
+      <div class="prompt">
+        <div class="ask" id="erAsk"></div>
+        <div class="cue" id="erCue"></div>
+        <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap" id="erBtns"></div>
+      </div>
+      <div class="duo" id="erStage"></div>
+    </div>
+  </main>
+
+  <!-- ===== CLAP IT ===== -->
+  <main class="screen" id="scClap" hidden>
+    <div class="gamewrap">
+      <div class="pips" id="clPips"></div>
+      <div class="prompt">
+        <div class="ask" id="clAsk"></div>
+        <button class="picture" id="clPic" aria-label="Hear it"></button>
+        <div class="cue" id="clCue"></div>
+        <div class="beats" id="clBeats"></div>
+      </div>
+      <div class="stage" style="grid-template-columns:1fr">
+        <button class="drum" id="clDrum" aria-label="Clap">👏</button>
+      </div>
     </div>
   </main>
 
@@ -2148,14 +2207,15 @@ async function removeOwn(item) {
    ========================================================== */
 function show(id) {
   ['scHome', 'scPlay', 'scReview', 'scGrown', 'scRec', 'scAsk', 'scStory',
-   'scWell', 'scTrace', 'scAlbum', 'scBook', 'scFirst', 'scPairs', 'scMiniWell'].forEach(function (s) {
+   'scWell', 'scTrace', 'scAlbum', 'scBook', 'scFirst', 'scPairs', 'scEar', 'scClap',
+   'scMiniWell'].forEach(function (s) {
     document.getElementById(s).hidden = (s !== id);
   });
-  document.getElementById('navStop').hidden = ['scPlay', 'scFirst', 'scPairs'].indexOf(id) < 0;
+  document.getElementById('navStop').hidden = ['scPlay', 'scFirst', 'scPairs', 'scEar', 'scClap'].indexOf(id) < 0;
   document.getElementById('navGrown').textContent = (id === 'scGrown') ? 'Done' : 'Grown-ups';
   document.getElementById('navGrown').hidden =
     ['scPlay', 'scRec', 'scAsk', 'scStory', 'scWell', 'scTrace', 'scAlbum', 'scBook',
-     'scFirst', 'scPairs', 'scMiniWell'].indexOf(id) > -1;
+     'scFirst', 'scPairs', 'scEar', 'scClap', 'scMiniWell'].indexOf(id) > -1;
   const sc = document.getElementById(id);
   if (sc) sc.scrollTop = 0;
 }
@@ -3011,6 +3071,250 @@ function firstTap(el, g) {
     if (FS.tries >= 2) el.classList.add('gone');
     setTimeout(function () { if (onScreen('scFirst')) sayPicture(); }, 350);
   }
+}
+
+/* ==========================================================
+   TEA OR KEY? — two words that differ only in their first sound
+   For a child who says "tat" for "cat": he has to hear that /t/ and /k/ make
+   different words before he will bother to say them differently. A grown-up
+   says the word (their own voice, face to face, is the point) and he taps the
+   picture; then they swap and he is the teacher. Ten goes on one pair, as a
+   speech therapist sets it. The app is the picture cards and the scorekeeper.
+   ========================================================== */
+const EAR_PAIRS = ('tea 🍵 key 🔑,tap 🚰 cap 🧢,tub 🛁 cub 🐻,tart 🥧 cart 🛒,' +
+  'tick ✅ kick ⚽,top 👕 cop 👮,tow 🛻 cow 🐄').split(',').map(function (p) {
+    const b = p.split(' ');
+    return [{ w: b[0], e: b[1] }, { w: b[2], e: b[3] }];
+  });
+const ER = { idx: Math.floor(Math.random() * 7), pair: null, mode: 'listen', n: 10, i: 0, order: [],
+             tries: 0, firstTry: 0, busy: false };
+function miniVoice(w) { return !!(SPRITE[w] || hasOwn({ kind: 'word', t: w })); }
+/* His grown-up's recording, else the free one; the computer voice only when
+   someone has asked for it by tapping. */
+async function miniSay(w, anyVoice) {
+  const own = await ownRecording({ kind: 'word', t: w });
+  if (own) { playOwn(own.url); return; }
+  if (SPRITE[w]) { playSprite(w); return; }
+  if (!anyVoice) return;
+  if (!window.speechSynthesis) { toast('No voice for this one — say it yourself'); return; }
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(w);
+    u.lang = 'en-GB'; u.rate = .7;
+    speechSynthesis.speak(u);
+  } catch (e) { /* no speech */ }
+}
+function earButton(label, fn) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'hearbtn'; b.textContent = label;
+  b.addEventListener('click', fn);
+  return b;
+}
+function earPictures(onPick) {
+  const stage = document.getElementById('erStage');
+  stage.innerHTML = '';
+  ER.pair.forEach(function (pic, k) {
+    const f = document.createElement('figure');
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'picture'; b.textContent = pic.e;
+    b.setAttribute('aria-label', pic.w);
+    b.addEventListener('click', function () { onPick(k, b); });
+    const c = document.createElement('figcaption');
+    c.textContent = pic.w;
+    f.appendChild(b); f.appendChild(c);
+    stage.appendChild(f);
+  });
+  return stage.querySelectorAll('.picture');
+}
+function earPips() {
+  const pips = document.getElementById('erPips');
+  pips.innerHTML = '';
+  for (let i = 0; i < ER.n; i++) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < ER.i ? ' done' : i === ER.i ? ' now' : '');
+    pips.appendChild(p);
+  }
+}
+/* First, meet the two pictures: he has to know what each one is called. */
+function startEar(next) {
+  if (next) ER.idx++;
+  ER.pair = EAR_PAIRS[ER.idx % EAR_PAIRS.length];
+  MINI.last = 'ear';
+  show('scEar');
+  const a = ER.pair[0], b = ER.pair[1];
+  document.getElementById('erPips').innerHTML = '';
+  document.getElementById('erAsk').innerHTML =
+    'This is <em>' + esc(a.w) + '</em> and this is <em>' + esc(b.w) + '</em>';
+  document.getElementById('erCue').textContent =
+    'Tap each picture and name it together. Then pick who is the teacher.';
+  const btns = document.getElementById('erBtns');
+  btns.innerHTML = '';
+  btns.appendChild(earButton('👂 He listens ▸', function () { earPlay('listen'); }));
+  btns.appendChild(earButton('🗣 He says it ▸', function () { earPlay('talk'); }));
+  earPictures(function (k, el) {
+    el.classList.add('cheer');
+    setTimeout(function () { el.classList.remove('cheer'); }, 600);
+    miniSay(ER.pair[k].w, true);
+  });
+}
+function earPlay(mode) {
+  ER.mode = mode;
+  ER.n = mode === 'listen' ? 10 : 6;
+  /* half and half, never the same one more than three times running */
+  do {
+    ER.order = shuffle(Array.from({ length: ER.n }, function (_, i) { return i % 2; }));
+  } while (/000 ?0|111 ?1/.test(ER.order.join('')));
+  ER.i = 0; ER.firstTry = 0;
+  earStep();
+}
+function earStep() {
+  if (ER.i >= ER.n) {
+    return miniWin(Math.round(100 * ER.firstTry / ER.n), ER.pair[0].w + ' and ' + ER.pair[1].w);
+  }
+  ER.tries = 0; ER.busy = false;
+  earPips();
+  const t = ER.order[ER.i], target = ER.pair[t];
+  const ask = document.getElementById('erAsk'), cue = document.getElementById('erCue');
+  const btns = document.getElementById('erBtns');
+  btns.innerHTML = '';
+  const pics = earPictures(function (k, el) { earTap(k, el); });
+  if (ER.mode === 'listen') {
+    ask.textContent = 'Which one did you hear?';
+    cue.innerHTML = 'Grown-up, say: <b>' + esc(target.w) + '</b>';
+    btns.appendChild(earButton('🔊 Hear it', function () { miniSay(target.w, true); }));
+    if (miniVoice(target.w)) {
+      setTimeout(function () { if (onScreen('scEar') && ER.order[ER.i] === t) miniSay(target.w, false); }, 350);
+    }
+  } else {
+    ask.textContent = 'His turn to be the teacher!';
+    cue.innerHTML = 'He says the glowing one. Grown-up, tap the one you <b>heard</b>.';
+    pics[t].classList.add('sayme');
+    btns.appendChild(earButton('Next ▸', function () { if (!ER.busy) { ER.i++; earStep(); } }));
+  }
+}
+function earTap(k, el) {
+  if (ER.busy) return;
+  const t = ER.order[ER.i], target = ER.pair[t], got = ER.pair[k];
+  const ask = document.getElementById('erAsk');
+  if (k === t) {
+    ER.busy = true;
+    if (ER.tries === 0) ER.firstTry++;
+    SFX.splat();
+    splatAt(el);
+    el.classList.remove('sayme');
+    el.classList.add('cheer');
+    /* say what he got right, not just "well done" */
+    ask.innerHTML = ER.mode === 'listen'
+      ? 'You found the <em>' + esc(target.w) + '</em>! ' + target.e
+      : 'I heard <em>' + esc(target.w) + '</em>! ' + target.e;
+    setTimeout(function () { if (onScreen('scEar')) { ER.i++; earStep(); } }, 1500);
+    return;
+  }
+  ER.tries++;
+  el.classList.add('shake');
+  setTimeout(function () { el.classList.remove('shake'); }, 460);
+  if (ER.mode === 'listen') {
+    SFX.nope();
+    ask.innerHTML = 'That one is <em>' + esc(got.w) + '</em>. Listen again…';
+    if (miniVoice(target.w)) setTimeout(function () { if (onScreen('scEar')) miniSay(target.w, false); }, 450);
+  } else {
+    /* no wrong-answer noise: he just sees which picture his word pointed to */
+    ask.innerHTML = 'I heard <em>' + esc(got.w) + '</em> ' + got.e + ' — have another go';
+  }
+}
+
+/* ==========================================================
+   CLAP IT — how many beats in the word?
+   One tap of the drum for each beat. Hearing the beats is what lets a child
+   keep all three in "banana" instead of dropping one. Get it wrong and the
+   word is clapped out for him, then it is his turn again.
+   ========================================================== */
+const CLAP_WORDS = ('🐱 cat,🐶 dog,🚗 car,🔑 key,🐄 cow,☀️ sun,🐟 fish,' +
+  '🍎 ap-ple,🐒 mon-key,🐯 ti-ger,🥕 car-rot,🐰 rab-bit,🍕 piz-za,🚀 rock-et,🧸 ted-dy,' +
+  '🍌 ba-na-na,🐘 el-e-phant,🦕 di-no-saur,🦋 but-ter-fly,🐊 croc-o-dile,☂️ um-brel-la,' +
+  '🦘 kan-ga-roo,🍅 to-ma-to,🥔 po-ta-to,🐙 oc-to-pus,💻 com-pu-ter,🍓 straw-ber-ry,' +
+  '🍔 ham-bur-ger,🐞 la-dy-bird,🚲 bi-cy-cle').split(',').map(function (x) {
+    const b = x.split(' ');
+    return { e: b[0], s: b[1].split('-'), w: b[1].replace(/-/g, '') };
+  });
+const CL = { list: [], i: 0, taps: 0, tries: 0, firstTry: 0, busy: false, timer: null };
+function startClap() {
+  const by = function (n) { return shuffle(CLAP_WORDS.filter(function (c) { return c.s.length === n; })); };
+  /* mostly long words: those are the ones that lose a beat */
+  CL.list = shuffle(by(1).slice(0, 2).concat(by(2).slice(0, 2), by(3).slice(0, 4)));
+  CL.i = 0; CL.firstTry = 0;
+  MINI.last = 'clap';
+  show('scClap');
+  clapStep();
+}
+function clapStep() {
+  if (CL.i >= CL.list.length) {
+    return miniWin(Math.round(100 * CL.firstTry / CL.list.length), CL.list.length + ' words clapped');
+  }
+  const c = CL.list[CL.i];
+  CL.tries = 0;
+  const pips = document.getElementById('clPips');
+  pips.innerHTML = '';
+  CL.list.forEach(function (_, i) {
+    const p = document.createElement('div');
+    p.className = 'pip' + (i < CL.i ? ' done' : i === CL.i ? ' now' : '');
+    pips.appendChild(p);
+  });
+  const pic = document.getElementById('clPic');
+  pic.textContent = c.e;
+  pic.setAttribute('aria-label', c.w + ' — hear it');
+  document.getElementById('clCue').innerHTML = 'Grown-up, say it slowly: <b>' + esc(c.w) + '</b>';
+  clapReady('Clap the beats');
+  if (miniVoice(c.w)) setTimeout(function () { if (onScreen('scClap') && CL.list[CL.i] === c) miniSay(c.w, false); }, 350);
+}
+function clapReady(text) {
+  clearTimeout(CL.timer);
+  CL.taps = 0; CL.busy = false;
+  document.getElementById('clAsk').textContent = text;
+  document.getElementById('clBeats').innerHTML = '';
+}
+function clapTap() {
+  if (CL.busy || !CL.list[CL.i]) return;
+  CL.taps++;
+  tone(330 + CL.taps * 70, .12, 0, 'triangle');
+  document.getElementById('clBeats').appendChild(document.createElement('i'));
+  clearTimeout(CL.timer);
+  /* a pause means he has finished clapping */
+  CL.timer = setTimeout(clapCheck, CL.taps >= 5 ? 0 : 1300);
+}
+/* The word in its beats, each lighting up in turn. */
+function clapShow(c, then) {
+  const host = document.getElementById('clBeats');
+  host.innerHTML = c.s.map(function (b) { return '<span>' + esc(b) + '</span>'; }).join('');
+  const chips = host.querySelectorAll('span');
+  c.s.forEach(function (_, k) {
+    setTimeout(function () {
+      if (!onScreen('scClap') || CL.list[CL.i] !== c) return;
+      chips[k].classList.add('on');
+      tone(400 + k * 70, .16, 0, 'triangle');
+    }, 250 + k * 520);
+  });
+  setTimeout(function () { if (onScreen('scClap') && CL.list[CL.i] === c) then(); }, 250 + c.s.length * 520 + 700);
+}
+function clapCheck() {
+  if (!onScreen('scClap')) return;
+  const c = CL.list[CL.i];
+  CL.busy = true;
+  const n = c.s.length, ask = document.getElementById('clAsk');
+  if (CL.taps === n) {
+    if (CL.tries === 0) CL.firstTry++;
+    SFX.splat();
+    splatAt(document.getElementById('clDrum'));
+    ask.textContent = n + (n === 1 ? ' clap!' : ' claps!') + ' Now say it';
+    return clapShow(c, function () { CL.i++; clapStep(); });
+  }
+  CL.tries++;
+  SFX.nope();
+  ask.textContent = 'Let’s clap it together';
+  clapShow(c, function () {
+    if (CL.tries >= 2) { CL.i++; clapStep(); }
+    else clapReady('Your turn — clap it');
+  });
 }
 
 /* ==========================================================
@@ -4121,7 +4425,24 @@ document.getElementById('pairsBtn').addEventListener('click', function () {
 });
 document.getElementById('fsPic').addEventListener('click', sayPicture);
 document.getElementById('mwAgain').addEventListener('click', function () {
-  if (MINI.last === 'pairs') startPairs(); else startFirstSounds();
+  if (MINI.last === 'pairs') startPairs();
+  else if (MINI.last === 'ear') startEar(true);
+  else if (MINI.last === 'clap') startClap();
+  else startFirstSounds();
+});
+document.getElementById('earBtn').addEventListener('click', function () {
+  if (actx && actx.state === 'suspended') actx.resume();
+  unlockAudio();
+  startEar(false);
+});
+document.getElementById('clapBtn').addEventListener('click', function () {
+  if (actx && actx.state === 'suspended') actx.resume();
+  unlockAudio();
+  startClap();
+});
+document.getElementById('clDrum').addEventListener('click', clapTap);
+document.getElementById('clPic').addEventListener('click', function () {
+  if (CL.list[CL.i]) miniSay(CL.list[CL.i].w, true);
 });
 document.getElementById('mwHome').addEventListener('click', function () { renderHome(); show('scHome'); });
 document.getElementById('traceClear').addEventListener('click', clearInk);
