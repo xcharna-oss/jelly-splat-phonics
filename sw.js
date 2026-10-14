@@ -1,5 +1,5 @@
 /* Offline cache. Bump CACHE when you change any file, so phones pick it up. */
-const CACHE = 'jelly-splat-v6';
+const CACHE = 'jelly-splat-v7';
 const CORE = ['./', './index.html', './voices.mp3', './manifest.json',
               './icon-192.png', './icon-512.png'];
 

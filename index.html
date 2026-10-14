@@ -1897,11 +1897,12 @@ function frequentWords(max) {
     if (!bare) return;
     const k = bare.toLowerCase();
     count[k] = (count[k] || 0) + weight;
-    if (!text[k] || bare === k) text[k] = bare === 'I' ? 'I' : k;
+    if (!text[k] || bare === k) text[k] = (bare === 'I' || bare === NAME_WORD.t) ? bare : k;
   }
   function addLine(line, weight) { String(line).split(/\s+/).forEach(function (w) { add(w, weight); }); }
   const sel = getSet(S.selectedSet);
   if (sel && sel.kind === 'word') batchInfo(sel).items.forEach(function (it) { add(it.t, 4); });
+  add(NAME_WORD.t, 20);   /* his name: worth recording first */
   allSets().forEach(function (s) {
     s.items.forEach(function (it) { const t = sentenceFor(it); if (t) addLine(t, 1); });
   });
@@ -2593,8 +2594,11 @@ function writeRec(t) {
 function wroteWell(t) { return (writeRec(t).stars || 0) >= 2; }
 const TRICKY_WORDS = BUILTIN.filter(function (s) { return s.kind === 'tricky'; })
   .reduce(function (a, s) { return a.concat(s.items); }, []);
+/* His own name turns up now and then too: as a swap, and in some sessions in
+   place of the shortest word. Capital first letter, as he'd write it. */
+const NAME_WORD = { t: 'Sylvan', eg: '', kind: 'word', name: true };
 function trickyPick(used) {
-  const pool = TRICKY_WORDS.filter(function (x) { return !used[String(x.t).toLowerCase()]; });
+  const pool = TRICKY_WORDS.concat([NAME_WORD]).filter(function (x) { return !used[String(x.t).toLowerCase()]; });
   if (!pool.length) return null;
   /* ones he hasn't written well yet first */
   const fresh = pool.filter(function (x) { return !wroteWell(x.t); });
@@ -2608,17 +2612,24 @@ function traceItems(set) {
   if (set.kind === 'sound') return items;
   const used = {};
   items.forEach(function (it) { used[String(it.t).toLowerCase()] = true; });
-  return items.map(function (it) {
+  const out = items.map(function (it) {
     const recent = wroteWell(it.t) && Date.now() - (writeRec(it.t).at || 0) < 20 * 3600 * 1000;
     const chance = recent ? 0.85
       : 0.2 + (String(it.t).length <= 2 ? 0.35 : 0) + (wroteWell(it.t) ? 0.25 : 0);
     return (Math.random() < chance && trickyPick(used)) || it;
   });
+  if (!used.sylvan && Math.random() < 0.4) {
+    let j = 0;
+    out.forEach(function (it, k) { if (String(it.t).length < String(out[j].t).length) j = k; });
+    out[j] = Object.assign({ bonus: true }, NAME_WORD);
+  }
+  return out;
 }
 function stepsFor(it) {
   if (it.kind === 'sound') return [{ it: it, gs: [it.t], g: 0, ch: it.t, whole: false }];
-  /* a one-letter word keeps its own case: 'I', not 'i' */
-  const gs = String(it.t).length === 1 ? [String(it.t)] : splitWord(it.t);
+  /* a one-letter word keeps its own case: 'I', not 'i'; so does his name's capital */
+  const gs = String(it.t).length === 1 ? [String(it.t)]
+    : it.name ? [it.t[0]].concat(splitWord(it.t.slice(1))) : splitWord(it.t);
   const out = gs.map(function (g, k) { return { it: it, gs: gs, g: k, ch: g, whole: false }; });
   if (String(it.t).length > 1) out.push({ it: it, gs: gs, g: gs.length, ch: String(it.t), whole: true });
   return out;
@@ -2705,7 +2716,7 @@ function traceStep() {
     head.innerHTML = '<span class="tw">' + st.gs.map(function (g, k) {
       return '<span class="' + (st.whole || k < st.g ? 'done' : k === st.g ? 'now' : '') + '">' + esc(g) + '</span>';
     }).join('') + '</span><small>' +
-      esc(st.whole ? 'now write the whole word' : FORM[st.ch] || 'trace the shape') + '</small>';
+      esc(st.whole ? 'now write the whole word' : FORM[st.ch] || FORM[st.ch.toLowerCase()] || 'trace the shape') + '</small>';
   } else {
     head.innerHTML = esc(st.ch) + '<small>' + esc(FORM[st.ch] || 'trace the shape') + '</small>';
   }
@@ -2714,7 +2725,7 @@ function traceStep() {
   const items = TR.steps.map(function (x) { return x.it; }).filter(function (x, k, a) { return a.indexOf(x) === k; });
   let prog = (isWord ? 'Word ' : '') + (items.indexOf(st.it) + 1) + ' of ' + items.length;
   if (isWord) prog += st.whole ? ' · whole word' : ' · letter ' + (st.g + 1) + ' of ' + st.gs.length;
-  if (isWord && TR.set) prog = (st.it.bonus ? '★ Bonus tricky word' : TR.set.name) + ' · ' + prog;
+  if (isWord && TR.set) prog = (st.it.name ? '★ Your name' : st.it.bonus ? '★ Bonus tricky word' : TR.set.name) + ' · ' + prog;
   document.getElementById('traceProg').textContent = prog;
   document.getElementById('traceSwap').hidden = !isWord || TR.swaps >= TRACE_SWAPS;
   document.getElementById('traceStars').innerHTML = '';
