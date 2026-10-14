@@ -1,0 +1,3 @@
+.DS_Store
+# hand-made backups from before git; history is in git now
+index.before-*.html
