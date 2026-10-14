@@ -668,6 +668,7 @@
         <button class="btn go" id="traceCheck">Check it</button>
         <button class="btn" id="traceNext">Next ▸</button>
       </div>
+      <button class="tbtn" id="traceSwap" style="align-self:center">🎲 Different word</button>
       <button class="tbtn" id="traceDone">Finish</button>
     </div>
     <p class="note" style="margin-top:16px">
@@ -2582,17 +2583,74 @@ function starRow(n) {
    order, then the whole word. Writing a word is what fixes its spelling, and
    loose letters taught him none of the book. A sounds set is still one shape
    per step. */
-function traceSteps(set) {
-  const out = [];
-  if (!set) return out;
-  batchInfo(set).items.forEach(function (it) {
-    if (it.kind === 'sound') { out.push({ it: it, gs: [it.t], g: 0, ch: it.t, whole: false }); return; }
-    /* a one-letter word keeps its own case: 'I', not 'i' */
-    const gs = String(it.t).length === 1 ? [String(it.t)] : splitWord(it.t);
-    gs.forEach(function (g, k) { out.push({ it: it, gs: gs, g: k, ch: g, whole: false }); });
-    if (String(it.t).length > 1) out.push({ it: it, gs: gs, g: gs.length, ch: String(it.t), whole: true });
+/* Writing the same short word every day gets dull ("it" again), so each word
+   in the batch may be swapped for a Reception tricky word: more likely when
+   it is only two letters or he has already written it well, and nearly
+   always when he wrote it well in the last day. */
+function writeRec(t) {
+  return S.write[String(t).length > 1 ? 'w:' + String(t).toLowerCase() : String(t)] || {};
+}
+function wroteWell(t) { return (writeRec(t).stars || 0) >= 2; }
+const TRICKY_WORDS = BUILTIN.filter(function (s) { return s.kind === 'tricky'; })
+  .reduce(function (a, s) { return a.concat(s.items); }, []);
+function trickyPick(used) {
+  const pool = TRICKY_WORDS.filter(function (x) { return !used[String(x.t).toLowerCase()]; });
+  if (!pool.length) return null;
+  /* ones he hasn't written well yet first */
+  const fresh = pool.filter(function (x) { return !wroteWell(x.t); });
+  const from = fresh.length ? fresh : pool;
+  const pick = from[Math.floor(Math.random() * from.length)];
+  used[String(pick.t).toLowerCase()] = true;
+  return Object.assign({ bonus: true }, pick);
+}
+function traceItems(set) {
+  const items = batchInfo(set).items.slice();
+  if (set.kind === 'sound') return items;
+  const used = {};
+  items.forEach(function (it) { used[String(it.t).toLowerCase()] = true; });
+  return items.map(function (it) {
+    const recent = wroteWell(it.t) && Date.now() - (writeRec(it.t).at || 0) < 20 * 3600 * 1000;
+    const chance = recent ? 0.85
+      : 0.2 + (String(it.t).length <= 2 ? 0.35 : 0) + (wroteWell(it.t) ? 0.25 : 0);
+    return (Math.random() < chance && trickyPick(used)) || it;
   });
+}
+function stepsFor(it) {
+  if (it.kind === 'sound') return [{ it: it, gs: [it.t], g: 0, ch: it.t, whole: false }];
+  /* a one-letter word keeps its own case: 'I', not 'i' */
+  const gs = String(it.t).length === 1 ? [String(it.t)] : splitWord(it.t);
+  const out = gs.map(function (g, k) { return { it: it, gs: gs, g: k, ch: g, whole: false }; });
+  if (String(it.t).length > 1) out.push({ it: it, gs: gs, g: gs.length, ch: String(it.t), whole: true });
   return out;
+}
+function traceSteps(set) {
+  if (!set) return [];
+  return traceItems(set).reduce(function (a, it) { return a.concat(stepsFor(it)); }, []);
+}
+/* His own way out of a word he is fed up with: swap the whole word for a
+   tricky word, a couple of times a session so the book words still get done. */
+const TRACE_SWAPS = 2;
+function swapTraceWord() {
+  const st = TR.steps[TR.i];
+  if (!st || st.it.kind === 'sound' || TR.swaps >= TRACE_SWAPS) return;
+  const used = {};
+  TR.steps.forEach(function (x) { used[String(x.it.t).toLowerCase()] = true; });
+  const pick = trickyPick(used);
+  if (!pick) return;
+  const first = TR.steps.findIndex(function (x) { return x.it === st.it; });
+  let n = 0;
+  while (TR.steps[first + n] && TR.steps[first + n].it === st.it) n++;
+  const fresh = stepsFor(pick);
+  TR.steps.splice.apply(TR.steps, [first, n].concat(fresh));
+  for (let i = first; i < first + n; i++) delete TR.passed[i];
+  /* passed marks after the word shift with it */
+  const moved = {};
+  Object.keys(TR.passed).forEach(function (k) { k = +k; moved[k >= first + n ? k - n + fresh.length : k] = true; });
+  TR.passed = moved;
+  TR.swaps++;
+  TR.i = first;
+  SFX.splat();
+  traceStep();
 }
 /* The voice for an item with no mouth to animate: his grown-up's recording,
    else the free one, else the robot if it is switched on. */
@@ -2617,6 +2675,7 @@ async function openTrace() {
   TR.i = 0;
   TR.wrote = 0;
   TR.passed = {};
+  TR.swaps = 0;
   document.getElementById('traceTitle').textContent =
     TR.set && TR.set.kind === 'word' ? 'Write the words' : 'Write the letters';
   show('scTrace');
@@ -2655,8 +2714,9 @@ function traceStep() {
   const items = TR.steps.map(function (x) { return x.it; }).filter(function (x, k, a) { return a.indexOf(x) === k; });
   let prog = (isWord ? 'Word ' : '') + (items.indexOf(st.it) + 1) + ' of ' + items.length;
   if (isWord) prog += st.whole ? ' · whole word' : ' · letter ' + (st.g + 1) + ' of ' + st.gs.length;
-  if (isWord && TR.set) prog = TR.set.name + ' · ' + prog;
+  if (isWord && TR.set) prog = (st.it.bonus ? '★ Bonus tricky word' : TR.set.name) + ' · ' + prog;
   document.getElementById('traceProg').textContent = prog;
+  document.getElementById('traceSwap').hidden = !isWord || TR.swaps >= TRACE_SWAPS;
   document.getElementById('traceStars').innerHTML = '';
   drawGuide(st.ch);
   clearInk();
@@ -3722,6 +3782,7 @@ document.getElementById('albumBtn').addEventListener('click', function () {
 document.getElementById('albumBack').addEventListener('click', function () { show('scHome'); });
 document.getElementById('traceClear').addEventListener('click', clearInk);
 document.getElementById('traceCheck').addEventListener('click', checkTrace);
+document.getElementById('traceSwap').addEventListener('click', swapTraceWord);
 document.getElementById('traceNext').addEventListener('click', function () { TR.i++; traceStep(); });
 document.getElementById('traceWord').addEventListener('click', sayTraceWord);
 document.getElementById('traceDone').addEventListener('click', function () {
