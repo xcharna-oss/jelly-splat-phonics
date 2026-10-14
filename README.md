@@ -42,7 +42,11 @@ a time; the next batch and the **Stretch round** unlock once the current six are
 - **Build the word** — the letters come scrambled, tap them in order.
 - **Write the words** — each word from the current batch is said aloud, traced a
   letter at a time, then traced whole, with its sentence from the book underneath.
-  Scored out of three stars. (A sounds set traces single letters.)
+  Scored out of three stars. (A sounds set traces single letters.) About one
+  session in three is instead **a page of this week's book**, written a whole word at
+  a time with the sentence building up underneath — the next page each time.
+  Bonus Reception tricky words and his name turn up too, and **🎲 Different word**
+  swaps one he's fed up with (twice a session).
 - **Stories** — twelve built-in stories, pick a topic and it reads one.
 - **Read the book** — your own photographed pages, every word tappable to hear.
 - **Stickers** — a jelly monster for every finished round (two if all first try), and
@@ -80,6 +84,13 @@ Say the pure sound: "sss", not "ess"; "t" without the "uh" on the end.
 The robot/computer voice is **off** by default and best left off.
 
 ---
+
+## Reading the book aloud
+
+Once a week, Grown-ups → **📖 Read this week's book aloud**: tap 🎙 on each page, read
+it, tap ■. He hears your voice on the Read the book screen (**▶ Hear this page**) and
+before he writes that page. If you type the book's sentences instead of just words,
+they become its pages too — leave a blank line between pages.
 
 ## Photographing a book
 

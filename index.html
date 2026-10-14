@@ -615,6 +615,10 @@
       <p class="note" style="margin:0" id="revFreqNote"></p>
       <button class="btn" id="revFreq" style="width:100%">🎥 Save &amp; record them now</button>
     </div>
+    <div class="card" id="revReadCard" hidden style="margin-top:12px">
+      <p class="note" style="margin:0" id="revReadNote"></p>
+      <button class="btn" id="revRead" style="width:100%">📖 Read the book aloud</button>
+    </div>
     <p class="note" style="margin-top:12px">
       <b>Tricky</b> brings a word back today. <b>Nearly</b> in a day or two.
       <b>Confident</b> pushes it out further each time — 2 days, then 4, 8, 16.
@@ -631,6 +635,7 @@
     <div class="storycard" style="min-height:0;margin-top:12px;padding:16px 14px">
       <p class="storyline" id="bookLines" style="font-size:22px"></p>
     </div>
+    <button class="tbtn" id="bookHear" style="align-self:center;margin:10px auto 0;display:block" hidden>▶ Hear this page</button>
     <div class="row" style="justify-content:center;margin-top:14px">
       <button class="btn ghost" id="bookPrev">◂ Back</button>
       <button class="btn go" id="bookNext">Next page ▸</button>
@@ -819,6 +824,11 @@
       <div class="row">
         <button class="btn ghost" id="showCredits">Where the free voices come from</button>
       </div>
+    </div>
+
+    <div class="card" id="readCard" hidden style="margin-top:10px">
+      <p class="note" style="margin:0" id="readNote"></p>
+      <button class="btn go" id="readBook" style="width:100%">📖 Read this week’s book aloud</button>
     </div>
 
     <div class="card" id="freqCard" hidden style="margin-top:10px">
@@ -1755,6 +1765,10 @@ function buildReview() {
     row.appendChild(w); row.appendChild(sc); row.appendChild(play); row.appendChild(grades);
     list.appendChild(row);
   });
+  const unread = unreadPages(S.selectedSet);
+  document.getElementById('revReadCard').hidden = !unread;
+  document.getElementById('revReadNote').textContent = unread + ' page' + (unread > 1 ? 's' : '') +
+    ' of this week’s book ' + (unread > 1 ? 'still need' : 'still needs') + ' reading aloud — he’ll hear you before he writes ' + (unread > 1 ? 'them.' : 'it.');
   const freq = frequentWords(12);
   document.getElementById('revFreqCard').hidden = !freq.length;
   document.getElementById('revFreqNote').textContent = freq.length + ' word' + (freq.length > 1 ? 's' : '') +
@@ -2299,6 +2313,12 @@ function renderGrown() {
     ' Right now: ' + ownCount + ' in your voice, ' + libCount + ' from the free library, ' +
     (total - ownCount - libCount) + ' with no recording yet.';
 
+  const book = bookFor(S.selectedSet), unread = unreadPages(S.selectedSet);
+  document.getElementById('readCard').hidden = !book;
+  if (book) document.getElementById('readNote').textContent = unread
+    ? unread + ' page' + (unread > 1 ? 's' : '') + ' of “' + (book.title || 'this week’s book') + '” not read aloud yet. ' +
+      'Read each page once a week — he hears your voice on the Read the book screen and before he writes a page.'
+    : 'Every page of “' + (book.title || 'this week’s book') + '” is read aloud. Tap to listen back or read again.';
   const freq = frequentWords(12);
   document.getElementById('freqCard').hidden = !freq.length;
   document.getElementById('freqList').textContent = freq.map(function (i) { return i.t; }).join(' · ');
@@ -2677,9 +2697,41 @@ function sayTraceWord() {
   const st = TR.steps[TR.i];
   if (st) sayItem(st.it, st.it.kind === 'sound');
 }
+/* Sometimes the session is a page of his book instead: each word written
+   whole, in order, with the sentence growing underneath. The next page each
+   time, round and round. Long pages stop at 12 words. */
+const PAGE_CHANCE = 0.35, PAGE_MAX_WORDS = 12;
+function pageSession(set) {
+  if (!set || set.kind !== 'word' || Math.random() >= PAGE_CHANCE) return null;
+  const b = bookFor(set.id);
+  if (!b) return null;
+  const at = (S.settings.bookPage || {})[set.id] || 0;
+  for (let n = 0; n < b.pages.length; n++) {
+    const idx = (at + n) % b.pages.length;
+    /* shown as printed (with its full stops), written without the punctuation */
+    const shown = (b.pages[idx].lines || []).join(' ').split(/\s+/)
+      .filter(function (w) { return /[A-Za-z]/.test(w); })
+      .slice(0, PAGE_MAX_WORDS);
+    const words = shown.map(function (w) { return w.replace(/^[^A-Za-z]+|[^A-Za-z'’]+$/g, ''); });
+    if (words.length) return { setId: set.id, idx: idx, words: words, shown: shown, count: b.pages.length };
+  }
+  return null;
+}
+function pageSteps(pg) {
+  return pg.words.map(function (w, wi) {
+    return { it: { t: w, eg: '', kind: 'word', page: true }, gs: [w], g: 0, ch: w, whole: true, wi: wi };
+  });
+}
+function pageHTML(pg, wi) {
+  return pg.shown.map(function (w, k) {
+    return k < wi ? '<span style="opacity:.55">' + esc(w) + '</span>'
+      : k === wi ? '<b>' + esc(w) + '</b>' : '<span style="opacity:.3">' + esc(w) + '</span>';
+  }).join(' ');
+}
 async function openTrace() {
   TR.set = getSet(S.selectedSet);
-  TR.steps = traceSteps(TR.set);
+  TR.page = pageSession(TR.set);
+  TR.steps = TR.page ? pageSteps(TR.page) : traceSteps(TR.set);
   if (!TR.steps.length) {
     TR.steps = ['s', 'a', 't'].map(function (g) { return { it: soundItem(g), gs: [g], g: 0, ch: g, whole: false }; });
   }
@@ -2687,10 +2739,12 @@ async function openTrace() {
   TR.wrote = 0;
   TR.passed = {};
   TR.swaps = 0;
-  document.getElementById('traceTitle').textContent =
-    TR.set && TR.set.kind === 'word' ? 'Write the words' : 'Write the letters';
+  document.getElementById('traceTitle').textContent = TR.page ? 'Write a page of the book'
+    : TR.set && TR.set.kind === 'word' ? 'Write the words' : 'Write the letters';
   show('scTrace');
   try { await document.fonts.load('700 200px Andika'); } catch (e) { /* fallback face */ }
+  /* the page in the grown-up's voice first, then the words one by one */
+  TR.pageVoice = TR.page ? await playPage(TR.page.setId, TR.page.idx) : false;
   traceStep();
 }
 function traceStep() {
@@ -2701,9 +2755,16 @@ function traceStep() {
     /* finished the whole run (not Finish part way): a sticker if at least half
        the steps were written, two if every one was */
     const passed = Object.keys(TR.passed).length, all = TR.steps.length;
+    if (TR.page) {
+      S.settings.bookPage = Object.assign({}, S.settings.bookPage);
+      S.settings.bookPage[TR.page.setId] = (TR.page.idx + 1) % TR.page.count;
+      saveDoc('settings/app', S.settings);
+      lsWrite();
+    }
     if (passed && passed * 2 >= all) {
       stickerSheet(awardStickers(passed === all ? 2 : 1, 'write'),
-        TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') + '!' : 'Lovely writing!');
+        TR.page ? 'You wrote a page of your book!'
+          : TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') + '!' : 'Lovely writing!');
     } else {
       toast(TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') +
         (TR.set ? ' from ' + TR.set.name : '') + '!' : 'Nice writing!');
@@ -2720,20 +2781,24 @@ function traceStep() {
   } else {
     head.innerHTML = esc(st.ch) + '<small>' + esc(FORM[st.ch] || 'trace the shape') + '</small>';
   }
-  document.getElementById('traceSent').innerHTML = (isWord && sentenceHTML(st.it)) || '';
+  document.getElementById('traceSent').innerHTML = st.it.page ? pageHTML(TR.page, st.wi)
+    : (isWord && sentenceHTML(st.it)) || '';
 
   const items = TR.steps.map(function (x) { return x.it; }).filter(function (x, k, a) { return a.indexOf(x) === k; });
   let prog = (isWord ? 'Word ' : '') + (items.indexOf(st.it) + 1) + ' of ' + items.length;
   if (isWord) prog += st.whole ? ' · whole word' : ' · letter ' + (st.g + 1) + ' of ' + st.gs.length;
   if (isWord && TR.set) prog = (st.it.name ? '★ Your name' : st.it.bonus ? '★ Bonus tricky word' : TR.set.name) + ' · ' + prog;
+  if (st.it.page) prog = '📖 Page ' + (TR.page.idx + 1) + ' · word ' + (st.wi + 1) + ' of ' + TR.page.words.length;
   document.getElementById('traceProg').textContent = prog;
-  document.getElementById('traceSwap').hidden = !isWord || TR.swaps >= TRACE_SWAPS;
+  document.getElementById('traceSwap').hidden = !isWord || !!TR.page || TR.swaps >= TRACE_SWAPS;
   document.getElementById('traceStars').innerHTML = '';
   drawGuide(st.ch);
   clearInk();
   TR.masks = buildMasks(st.ch);
   /* hear the word before he starts on it */
-  if (isWord && st.g === 0) setTimeout(function () { if (TR.steps[TR.i] === st) sayTraceWord(); }, 300);
+  /* (not over the grown-up reading the page at the start) */
+  if (isWord && st.g === 0 && !(TR.i === 0 && TR.pageVoice))
+    setTimeout(function () { if (TR.steps[TR.i] === st) sayTraceWord(); }, 300);
 }
 function glyphFont(ch, size) { return '700 ' + size + 'px Andika, "Comic Sans MS", sans-serif'; }
 /* A whole word has to fit the box, so it shrinks to the width. */
@@ -3449,6 +3514,107 @@ async function saveBook(title, pages, chosen) {
   toast(items.length + ' words and ' + saved.length + ' pages saved');
 }
 
+/* ---------- the grown-up reading each page aloud ---------- */
+/* One recording per page, kept on this phone. It plays on the Read the book
+   screen and before he writes that page. */
+function bookFor(setId) {
+  const b = S.books[setId];
+  return b && b.pages && b.pages.some(function (pg) { return (pg.lines || []).join(' ').trim(); }) ? b : null;
+}
+function pageKeyFor(setId, i) { return 'pr:' + setId + ':' + i; }
+async function playPage(setId, i) {
+  const b = S.books[setId];
+  if (!b || !b.pages[i] || !b.pages[i].read) return false;
+  const blob = await idbGet(pageKeyFor(setId, i));
+  if (!blob) return false;
+  playOwn(URL.createObjectURL(blob));
+  return true;
+}
+function unreadPages(setId) {
+  const b = bookFor(setId);
+  return b ? b.pages.filter(function (pg) { return (pg.lines || []).length && !pg.read; }).length : 0;
+}
+function readBookSheet(setId) {
+  const b = bookFor(setId);
+  if (!b) { toast('Add this week’s book first'); return; }
+  const s = makeSheet();
+  let rec = null, stream = null;
+  function stopAll() {
+    if (rec && rec.state === 'recording') rec.stop();
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    stream = null;
+  }
+  const close = s.close;
+  /* closing the sheet any way must not leave the microphone on */
+  s.body.parentNode.addEventListener('click', function (e) { if (e.target === s.body.parentNode) stopAll(); });
+  setTimeout(function () {
+    const c = s.body.querySelector('.btn.ghost');
+    if (c) c.addEventListener('click', stopAll);
+  }, 0);
+  const h = document.createElement('h3');
+  h.textContent = 'Read “' + (b.title || 'the book') + '” aloud';
+  const p = document.createElement('p');
+  p.className = 'note'; p.style.margin = '0';
+  p.textContent = 'Tap 🎙, read the page in your normal reading voice, tap ■ when you finish. ' +
+    'He hears it on the Read the book screen and before he writes that page.';
+  s.body.appendChild(h); s.body.appendChild(p);
+  b.pages.forEach(function (pg, i) {
+    const text = (pg.lines || []).join(' ');
+    if (!text) return;
+    const row = document.createElement('div');
+    row.className = 'wtile';
+    row.style.gridTemplateColumns = '1fr auto auto';
+    const lab = document.createElement('span');
+    lab.className = 'lab'; lab.style.cssText = 'font-size:15px;font-family:var(--letter)';
+    lab.innerHTML = '<small>Page ' + (i + 1) + (pg.read ? ' · ✓ read' : '') + '</small><br>' + esc(text);
+    const play = document.createElement('button');
+    play.className = 'mini'; play.textContent = '▶'; play.hidden = !pg.read;
+    play.setAttribute('aria-label', 'Hear page ' + (i + 1));
+    play.addEventListener('click', function () { playPage(setId, i); });
+    const btn = document.createElement('button');
+    btn.className = 'mini'; btn.textContent = '🎙';
+    btn.setAttribute('aria-label', 'Record page ' + (i + 1));
+    btn.addEventListener('click', async function () {
+      if (rec && rec.state === 'recording') {
+        if (btn.dataset.live) rec.stop();
+        return;
+      }
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+      catch (e) { toast('No microphone access'); return; }
+      const mime = pickMime('mic');
+      try { rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined); }
+      catch (e) { stopAll(); toast('Recording isn’t supported here'); return; }
+      const chunks = [];
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = async function () {
+        clearTimeout(cap);
+        btn.textContent = '🎙'; delete btn.dataset.live; btn.classList.remove('live');
+        if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+        stream = null;
+        if (!chunks.length) return;
+        const blob = new Blob(chunks, { type: rec.mimeType || mime || 'audio/webm' });
+        if (!(await idbPut(pageKeyFor(setId, i), blob))) { toast('Could not save page ' + (i + 1)); return; }
+        pg.read = true;
+        saveDoc('books/' + setId, b);
+        lsWrite();
+        lab.querySelector('small').textContent = 'Page ' + (i + 1) + ' · ✓ read';
+        play.hidden = false;
+        toast('Page ' + (i + 1) + ' saved');
+        renderGrown();
+      };
+      rec.start();
+      btn.textContent = '■'; btn.dataset.live = '1'; btn.classList.add('live');
+      const cap = setTimeout(function () { if (rec && rec.state === 'recording') rec.stop(); }, 90000);
+    });
+    row.appendChild(lab); row.appendChild(play); row.appendChild(btn);
+    s.body.appendChild(row);
+  });
+  const done = document.createElement('button');
+  done.className = 'btn go'; done.textContent = 'Done';
+  done.addEventListener('click', function () { stopAll(); close(); });
+  s.body.appendChild(done);
+}
+
 /* ---------- reading the real pages ---------- */
 const BK = { id: null, i: 0 };
 function openBook(setId) {
@@ -3506,6 +3672,7 @@ function drawPage() {
       host.appendChild(btn);
     });
   }
+  document.getElementById('bookHear').hidden = !pg.read;
   document.getElementById('bookPrev').disabled = BK.i === 0;
   document.getElementById('bookNext').textContent =
     BK.i >= b.pages.length - 1 ? 'All done ★' : 'Next page ▸';
@@ -3784,6 +3951,7 @@ document.getElementById('photoPick').addEventListener('click', photographBook);
 document.getElementById('bookBtn').addEventListener('click', function () { openBook(S.selectedSet); });
 document.getElementById('bookNext').addEventListener('click', function () { bookStep(1); });
 document.getElementById('bookPrev').addEventListener('click', function () { bookStep(-1); });
+document.getElementById('bookHear').addEventListener('click', function () { playPage(BK.id, BK.i); });
 document.getElementById('bookDone').addEventListener('click', function () { show('scHome'); });
 document.getElementById('traceBtn').addEventListener('click', openTrace);
 document.getElementById('albumBtn').addEventListener('click', function () {
@@ -3804,6 +3972,8 @@ setupTraceCanvas();
 document.getElementById('hearBtn').addEventListener('click', hearPrompt);
 document.getElementById('recAll').addEventListener('click', function () { startRecorder(mediaTab); });
 document.getElementById('freqRec').addEventListener('click', recordFrequent);
+document.getElementById('readBook').addEventListener('click', function () { readBookSheet(S.selectedSet); });
+document.getElementById('revRead').addEventListener('click', function () { readBookSheet(S.selectedSet); });
 document.getElementById('revFreq').addEventListener('click', async function () {
   await commitGrades();
   recordFrequent();
@@ -3866,6 +4036,21 @@ document.getElementById('bkSave').addEventListener('click', function () {
     });
   }
   const id = editingSet || ('u_' + Date.now().toString(36));
+  /* Typed sentences also become the book's pages (a blank line starts a new
+     page; with none, two sentences a page), so he can read them and write a
+     page of the book without any photos. A photographed book is left alone. */
+  if (lines.length && (!S.books[id] || S.books[id].typed)) {
+    const chunks = raw.split(/\n\s*\n/).map(linesFrom).filter(function (l) { return l.length; });
+    let pages = chunks.length > 1 ? chunks : [];
+    if (!pages.length && chunks.length) {
+      for (let i = 0; i < chunks[0].length; i += 2) pages.push(chunks[0].slice(i, i + 2));
+    }
+    if (pages.length) {
+      S.books[id] = { pages: pages.map(function (l) { return { pageKey: null, lines: l }; }),
+                      title: name, at: Date.now(), typed: true };
+      saveDoc('books/' + id, S.books[id]);
+    }
+  }
   S.sets[id] = { name: name, kind: 'word', items: words, phase: 'Reading book',
                  createdAt: (S.sets[id] && S.sets[id].createdAt) || Date.now() };
   saveDoc('sets/' + id, S.sets[id]).then(function () {
