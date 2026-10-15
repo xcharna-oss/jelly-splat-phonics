@@ -824,6 +824,7 @@
       <div class="row">
         <button class="btn ghost" id="showCredits">Where the free voices come from</button>
       </div>
+      <button class="btn go" id="missRec" style="width:100%" hidden>🎙 Record every word with no voice</button>
     </div>
 
     <div class="card" id="readCard" hidden style="margin-top:10px">
@@ -1904,7 +1905,7 @@ function startRecorder(setId) {
    sentences under each splat and each traced word, the built-in and saved
    stories and the book pages — that are not yet in a grown-up's own voice.
    Ones with no free recording either (robot or silence) come first. */
-function frequentWords(max) {
+function frequentWords(max, minCount) {
   const count = {}, text = {};
   function add(w, weight) {
     const bare = String(w).replace(/[^A-Za-z'’]/g, '');
@@ -1927,7 +1928,7 @@ function frequentWords(max) {
   });
   return Object.keys(count)
     .map(function (k) { return { it: { t: text[k], eg: '', kind: 'word' }, n: count[k] }; })
-    .filter(function (x) { return x.n >= 3 && !hasOwn(x.it); })
+    .filter(function (x) { return x.n >= (minCount || 3) && !hasOwn(x.it); })
     .sort(function (a, b) {
       return (libWordFor(a.it) ? 1 : 0) - (libWordFor(b.it) ? 1 : 0) || b.n - a.n;
     })
@@ -1944,6 +1945,39 @@ function recordFrequent() {
   drawRecTabs();
   show('scRec');
   setMode('cam');
+}
+/* Every word and sound that plays with no human voice at all: not recorded by
+   a grown-up and not in the free library. Words come first, the ones he hears
+   most at the top; sounds last. Runs hands-free, voice only, so it can be done
+   in one sitting; stopping part way is fine, the next run picks up what's left. */
+function missingVoices() {
+  const out = [], seen = {};
+  function push(it) {
+    const k = keyOf(it);
+    if (seen[k]) return;
+    seen[k] = true;
+    if (hasOwn(it) || (it.kind !== 'sound' && libWordFor(it))) return;
+    out.push(it);
+  }
+  frequentWords(100000, 1).forEach(push);
+  allSets().forEach(function (s) { s.items.forEach(function (it) { if (it.kind !== 'sound') push(it); }); });
+  allSets().forEach(function (s) { s.items.forEach(function (it) { if (it.kind === 'sound') push(it); }); });
+  return out;
+}
+function recordMissing() {
+  const list = missingVoices();
+  if (!list.length) { toast('Every word and sound has a voice'); return; }
+  REC.setId = null;
+  REC.list = list;
+  REC.i = 0;
+  REC.hands = true;
+  const h = document.getElementById('modeHands');
+  h.textContent = 'Hands-free: on';
+  h.classList.add('on');
+  document.getElementById('recSetName').textContent = 'Recording: every word with no voice';
+  drawRecTabs();
+  show('scRec');
+  setMode('mic');
 }
 /* Switch sets without leaving the recorder. */
 function drawRecTabs() {
@@ -2094,6 +2128,7 @@ document.getElementById('recPlay').addEventListener('click', function () {
   else if (it) openWord(it);
 });
 document.getElementById('recDone').addEventListener('click', finishRecording);
+document.getElementById('missRec').addEventListener('click', recordMissing);
 document.getElementById('modeCam').addEventListener('click', function () { setMode('cam'); });
 document.getElementById('modeMic').addEventListener('click', function () { setMode('mic'); });
 document.getElementById('modeHands').addEventListener('click', function () {
@@ -2309,6 +2344,10 @@ function renderGrown() {
       else if (libWordFor(it)) libCount++;
     });
   });
+  const missing = missingVoices().length;
+  const missBtn = document.getElementById('missRec');
+  missBtn.hidden = !missing;
+  missBtn.textContent = '🎙 Record all ' + missing + ' with no voice';
   document.getElementById('voiceStat').textContent =
     ' Right now: ' + ownCount + ' in your voice, ' + libCount + ' from the free library, ' +
     (total - ownCount - libCount) + ' with no recording yet.';
