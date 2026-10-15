@@ -42,10 +42,17 @@ a time; the next batch and the **Stretch round** unlock once the current six are
 - **Build the word** — the letters come scrambled, tap them in order.
 - **Write the words** — each word from the current batch is said aloud, traced a
   letter at a time, then traced whole, with its sentence from the book underneath.
-  Scored out of three stars. (A sounds set traces single letters.)
+  Scored out of three stars. (A sounds set traces single letters.) About one
+  session in three is instead **a page of this week's book**, written a whole word at
+  a time with the sentence building up underneath — the next page each time.
+  Bonus Reception tricky words and his name turn up too, and **🎲 Different word**
+  swaps one he's fed up with (twice a session).
 - **Stories** — twelve built-in stories, pick a topic and it reads one.
 - **Read the book** — your own photographed pages, every word tappable to hear.
-- **Stickers** — a jelly monster for every finished round.
+- **Stickers** — a jelly monster for every finished round of any game (two if all first try), and
+  for finishing a writing session (two if every letter/word was written). Grown-ups
+  can give 1, 2 or 3 extra at any time with the **+★** button at the top — it asks a
+  sum first so a four-year-old can't help himself.
 - **First sounds** — a picture appears and says its word; splat the jelly with the
   sound it starts with. Practises hearing the first sound before he can read the word.
   Pictures with a real voice (yours, or a free one) come up first.
@@ -78,11 +85,27 @@ it can only play the word "shop" — never the pure sound. Grown-ups → pick a 
 **🎙 Record all …**, then turn **Hands-free** on: it shows a word, counts you in,
 records two seconds and moves on by itself. A set of eight takes about a minute.
 
+The app also finds the words the games, stories and book use most that aren't in
+your voice yet, and offers **🎥 Record these words** (Grown-ups, and after each round)
+— a quick video of you saying each one, used instead of the robot voice everywhere.
+
+To fill every gap in one sitting: Grown-ups → Voices → **🎙 Record all … with no
+voice**. It lists every word and sound with neither your recording nor a free one
+(most-heard words first, sounds last) and runs hands-free, voice only. Stop whenever;
+next time it only lists what is still missing.
+
 Say the pure sound: "sss", not "ess"; "t" without the "uh" on the end.
 
 The robot/computer voice is **off** by default and best left off.
 
 ---
+
+## Reading the book aloud
+
+Once a week, Grown-ups → **📖 Read this week's book aloud**: tap 🎙 on each page, read
+it, tap ■. He hears your voice on the Read the book screen (**▶ Hear this page**) and
+before he writes that page. If you type the book's sentences instead of just words,
+they become its pages too — leave a blank line between pages.
 
 ## Photographing a book
 
@@ -148,7 +171,8 @@ The game itself is yours to keep, change and pass on.
 
 To change wording or add word lists, open `index.html` in any text editor — the word
 lists are near the top, under `const BUILTIN`. If you change any file, bump the
-version in `sw.js` (`jelly-splat-v1` → `v2`) so phones pick up the new copy.
+version in `sw.js` (`jelly-splat-v2` → `v3`) so phones pick up the new copy.
+
 
 
 ---

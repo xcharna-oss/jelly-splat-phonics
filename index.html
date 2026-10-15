@@ -671,6 +671,7 @@
 <div id="app">
   <div class="topbar">
     <div class="wordmark"><span id="markSlot"></span>Jelly Splat</div>
+    <button class="tbtn" id="navGift" aria-label="Give extra stickers (grown-ups)">+★</button>
     <button class="tbtn" id="navStop" hidden>Stop</button>
     <button class="tbtn" id="navGrown">Grown-ups</button>
   </div>
@@ -739,6 +740,14 @@
     <h2 class="sect">How did he do?</h2>
     <div class="setlist" id="revList"></div>
     <button class="btn go" id="saveReview" style="width:100%;margin-top:16px;padding:14px">Save &amp; finish</button>
+    <div class="card" id="revFreqCard" hidden style="margin-top:12px">
+      <p class="note" style="margin:0" id="revFreqNote"></p>
+      <button class="btn" id="revFreq" style="width:100%">🎥 Save &amp; record them now</button>
+    </div>
+    <div class="card" id="revReadCard" hidden style="margin-top:12px">
+      <p class="note" style="margin:0" id="revReadNote"></p>
+      <button class="btn" id="revRead" style="width:100%">📖 Read the book aloud</button>
+    </div>
     <p class="note" style="margin-top:12px">
       <b>Tricky</b> brings a word back today. <b>Nearly</b> in a day or two.
       <b>Confident</b> pushes it out further each time — 2 days, then 4, 8, 16.
@@ -755,6 +764,7 @@
     <div class="storycard" style="min-height:0;margin-top:12px;padding:16px 14px">
       <p class="storyline" id="bookLines" style="font-size:22px"></p>
     </div>
+    <button class="tbtn" id="bookHear" style="align-self:center;margin:10px auto 0;display:block" hidden>▶ Hear this page</button>
     <div class="row" style="justify-content:center;margin-top:14px">
       <button class="btn ghost" id="bookPrev">◂ Back</button>
       <button class="btn go" id="bookNext">Next page ▸</button>
@@ -792,6 +802,7 @@
         <button class="btn go" id="traceCheck">Check it</button>
         <button class="btn" id="traceNext">Next ▸</button>
       </div>
+      <button class="tbtn" id="traceSwap" style="align-self:center">🎲 Different word</button>
       <button class="tbtn" id="traceDone">Finish</button>
     </div>
     <p class="note" style="margin-top:16px">
@@ -1006,6 +1017,18 @@
         <button class="btn ghost" id="showCredits">Where the free voices come from</button>
         <a class="btn ghost" href="maths/index.html" style="text-decoration:none;text-align:center">🧱 Open Jelly Blocks Maths</a>
       </div>
+    </div>
+
+    <div class="card" id="readCard" hidden style="margin-top:10px">
+      <p class="note" style="margin:0" id="readNote"></p>
+      <button class="btn go" id="readBook" style="width:100%">📖 Read this week’s book aloud</button>
+    </div>
+
+    <div class="card" id="freqCard" hidden style="margin-top:10px">
+      <p class="note" style="margin:0"><b>These words come up again and again</b> in the games, stories and
+        book, and aren’t in your voice yet: <b id="freqList"></b>. A short video of you saying each one
+        replaces the robot voice everywhere.</p>
+      <button class="btn go" id="freqRec" style="width:100%">🎥 Record these words</button>
     </div>
 
     <h2 class="sect">Words &amp; sounds</h2>
@@ -1786,8 +1809,17 @@ function gooBurst(el) {
     setTimeout(function () { g.remove(); }, 700);
   }
 }
+/* Once the answer is right, the question is over: a stray tap while the splat
+   plays must not count as a miss (it cost him the "all first time" sticker),
+   and timers left over from a round he stopped must not finish it for him
+   (that awarded a sticker and popped the well-done screen over the home page). */
+function winSoon(ms) {
+  const q = G.q;
+  q.won = true;
+  setTimeout(function () { if (G.q === q) win(); }, ms);
+}
 function onTap(el, payload) {
-  if (!G.q) return;
+  if (!G.q || G.q.won) return;
   if (G.q.mode === 'blend') {
     const want = G.q.graphemes[G.blendIdx];
     if (payload.grapheme === want) {
@@ -1797,12 +1829,12 @@ function onTap(el, payload) {
       G.blendIdx++;
       SFX.splat();
       splatAt(el);
-      if (G.blendIdx >= G.q.graphemes.length) setTimeout(win, 420);
+      if (G.blendIdx >= G.q.graphemes.length) winSoon(420);
       else if (G.mouth.m) G.mouth.m.play(framesFor([want], 0));
     } else miss(el);
     return;
   }
-  if (keyOf(payload.item) === keyOf(G.q.item)) { SFX.splat(); splatAt(el); setTimeout(win, 430); }
+  if (keyOf(payload.item) === keyOf(G.q.item)) { SFX.splat(); splatAt(el); winSoon(430); }
   else miss(el);
 }
 function miss(el) {
@@ -1840,12 +1872,14 @@ function win() {
   G.i++;
   const html = sentenceHTML(it);
   const el = document.getElementById('sentence');
+  const q = G.q;
+  const next = function () { if (G.q === q) nextQuestion(); };
   if (html) {
     el.innerHTML = html;
     el.hidden = false;
-    setTimeout(nextQuestion, 1700);
+    setTimeout(next, 1700);
   } else {
-    setTimeout(nextQuestion, 240);
+    setTimeout(next, 240);
   }
 }
 function hearPrompt() { if (G.q) present(document.getElementById('promptBox'), G.mouth, G.q.item); }
@@ -1874,7 +1908,8 @@ function endGame() {
   saveDoc('stats/app', S.stats);
 
   /* child's payoff first; the grading screen is for the grown-up */
-  const won = awardSticker(acc);
+  G.q = null;
+  const won = awardStickers(acc >= 100 ? 2 : 1, 'splat', acc);
   document.getElementById('wellTitle').textContent =
     acc >= 90 ? 'Brilliant!' : acc >= 60 ? 'Well done!' : 'Good trying!';
   document.getElementById('wellStars').innerHTML =
@@ -1923,6 +1958,15 @@ function buildReview() {
     row.appendChild(w); row.appendChild(sc); row.appendChild(play); row.appendChild(grades);
     list.appendChild(row);
   });
+  const unread = unreadPages(S.selectedSet);
+  document.getElementById('revReadCard').hidden = !unread;
+  document.getElementById('revReadNote').textContent = unread + ' page' + (unread > 1 ? 's' : '') +
+    ' of this week’s book ' + (unread > 1 ? 'still need' : 'still needs') + ' reading aloud — he’ll hear you before he writes ' + (unread > 1 ? 'them.' : 'it.');
+  const freq = frequentWords(12);
+  document.getElementById('revFreqCard').hidden = !freq.length;
+  document.getElementById('revFreqNote').textContent = freq.length + ' word' + (freq.length > 1 ? 's' : '') +
+    ' the games use a lot aren’t in your voice yet: ' +
+    freq.map(function (i) { return i.t; }).join(' · ') + '. A quick video of you saying them is much better.';
   show('scReview');
 }
 document.getElementById('wellGrown').addEventListener('click', buildReview);
@@ -2049,6 +2093,51 @@ function startRecorder(setId) {
   show('scRec');
   setMode(REC.mode);
 }
+/* The words he hears most — the batch every round is built from, the example
+   sentences under each splat and each traced word, the built-in and saved
+   stories and the book pages — that are not yet in a grown-up's own voice.
+   Ones with no free recording either (robot or silence) come first. */
+function frequentWords(max, minCount) {
+  const count = {}, text = {};
+  function add(w, weight) {
+    const bare = String(w).replace(/[^A-Za-z'’]/g, '');
+    if (!bare) return;
+    const k = bare.toLowerCase();
+    count[k] = (count[k] || 0) + weight;
+    if (!text[k] || bare === k) text[k] = (bare === 'I' || bare === NAME_WORD.t) ? bare : k;
+  }
+  function addLine(line, weight) { String(line).split(/\s+/).forEach(function (w) { add(w, weight); }); }
+  const sel = getSet(S.selectedSet);
+  if (sel && sel.kind === 'word') batchInfo(sel).items.forEach(function (it) { add(it.t, 4); });
+  add(NAME_WORD.t, 20);   /* his name: worth recording first */
+  allSets().forEach(function (s) {
+    s.items.forEach(function (it) { const t = sentenceFor(it); if (t) addLine(t, 1); });
+  });
+  STORYBOOK.forEach(function (st) { st.lines.forEach(function (l) { addLine(l, 1); }); });
+  Object.keys(S.stories).forEach(function (id) { (S.stories[id].lines || []).forEach(function (l) { addLine(l, 1); }); });
+  Object.keys(S.books).forEach(function (id) {
+    (S.books[id].pages || []).forEach(function (pg) { (pg.lines || []).forEach(function (l) { addLine(l, 2); }); });
+  });
+  return Object.keys(count)
+    .map(function (k) { return { it: { t: text[k], eg: '', kind: 'word' }, n: count[k] }; })
+    .filter(function (x) { return x.n >= (minCount || 3) && !hasOwn(x.it); })
+    .sort(function (a, b) {
+      return (libWordFor(a.it) ? 1 : 0) - (libWordFor(b.it) ? 1 : 0) || b.n - a.n;
+    })
+    .slice(0, max || 12)
+    .map(function (x) { return x.it; });
+}
+function recordFrequent() {
+  const list = frequentWords(12);
+  if (!list.length) { toast('All the most-used words are in your voice'); return; }
+  REC.setId = null;
+  REC.list = list;
+  REC.i = 0;
+  document.getElementById('recSetName').textContent = 'Recording: most-used words';
+  drawRecTabs();
+  show('scRec');
+  setMode('cam');
+}
 /* Every word and sound that plays with no human voice at all: not recorded by
    a grown-up and not in the free library. Words come first, the ones he hears
    most at the top; sounds last. Runs hands-free, voice only, so it can be done
@@ -2062,20 +2151,8 @@ function missingVoices() {
     if (hasOwn(it) || (it.kind !== 'sound' && libWordFor(it))) return;
     out.push(it);
   }
+  frequentWords(100000, 1).forEach(push);
   allSets().forEach(function (s) { s.items.forEach(function (it) { if (it.kind !== 'sound') push(it); }); });
-  /* then every word of the example sentences, stories and book pages */
-  function addLine(line) {
-    String(line || '').split(/\s+/).forEach(function (w) {
-      const bare = w.replace(/[^A-Za-z'’]/g, '');
-      if (bare) push({ t: bare === 'I' ? 'I' : bare.toLowerCase(), eg: '', kind: 'word' });
-    });
-  }
-  allSets().forEach(function (s) { s.items.forEach(function (it) { addLine(sentenceFor(it)); }); });
-  STORYBOOK.forEach(function (st) { st.lines.forEach(addLine); });
-  Object.keys(S.stories).forEach(function (id) { (S.stories[id].lines || []).forEach(addLine); });
-  Object.keys(S.books).forEach(function (id) {
-    (S.books[id].pages || []).forEach(function (pg) { (pg.lines || []).forEach(addLine); });
-  });
   allSets().forEach(function (s) { s.items.forEach(function (it) { if (it.kind === 'sound') push(it); }); });
   return out;
 }
@@ -2469,6 +2546,16 @@ function renderGrown() {
     ' Right now: ' + ownCount + ' in your voice, ' + libCount + ' from the free library, ' +
     (total - ownCount - libCount) + ' with no recording yet.';
 
+  const book = bookFor(S.selectedSet), unread = unreadPages(S.selectedSet);
+  document.getElementById('readCard').hidden = !book;
+  if (book) document.getElementById('readNote').textContent = unread
+    ? unread + ' page' + (unread > 1 ? 's' : '') + ' of “' + (book.title || 'this week’s book') + '” not read aloud yet. ' +
+      'Read each page once a week — he hears your voice on the Read the book screen and before he writes a page.'
+    : 'Every page of “' + (book.title || 'this week’s book') + '” is read aloud. Tap to listen back or read again.';
+  const freq = frequentWords(12);
+  document.getElementById('freqCard').hidden = !freq.length;
+  document.getElementById('freqList').textContent = freq.map(function (i) { return i.t; }).join(' · ');
+
   const tabs = document.getElementById('mediaTabs');
   tabs.innerHTML = '';
   allSets().forEach(function (s) {
@@ -2750,17 +2837,84 @@ function starRow(n) {
    order, then the whole word. Writing a word is what fixes its spelling, and
    loose letters taught him none of the book. A sounds set is still one shape
    per step. */
-function traceSteps(set) {
-  const out = [];
-  if (!set) return out;
-  batchInfo(set).items.forEach(function (it) {
-    if (it.kind === 'sound') { out.push({ it: it, gs: [it.t], g: 0, ch: it.t, whole: false }); return; }
-    /* a one-letter word keeps its own case: 'I', not 'i' */
-    const gs = String(it.t).length === 1 ? [String(it.t)] : splitWord(it.t);
-    gs.forEach(function (g, k) { out.push({ it: it, gs: gs, g: k, ch: g, whole: false }); });
-    if (String(it.t).length > 1) out.push({ it: it, gs: gs, g: gs.length, ch: String(it.t), whole: true });
+/* Writing the same short word every day gets dull ("it" again), so each word
+   in the batch may be swapped for a Reception tricky word: more likely when
+   it is only two letters or he has already written it well, and nearly
+   always when he wrote it well in the last day. */
+function writeRec(t) {
+  return S.write[String(t).length > 1 ? 'w:' + String(t).toLowerCase() : String(t)] || {};
+}
+function wroteWell(t) { return (writeRec(t).stars || 0) >= 2; }
+const TRICKY_WORDS = BUILTIN.filter(function (s) { return s.kind === 'tricky'; })
+  .reduce(function (a, s) { return a.concat(s.items); }, []);
+/* His own name turns up now and then too: as a swap, and in some sessions in
+   place of the shortest word. Capital first letter, as he'd write it. */
+const NAME_WORD = { t: 'Sylvan', eg: '', kind: 'word', name: true };
+function trickyPick(used) {
+  const pool = TRICKY_WORDS.concat([NAME_WORD]).filter(function (x) { return !used[String(x.t).toLowerCase()]; });
+  if (!pool.length) return null;
+  /* ones he hasn't written well yet first */
+  const fresh = pool.filter(function (x) { return !wroteWell(x.t); });
+  const from = fresh.length ? fresh : pool;
+  const pick = from[Math.floor(Math.random() * from.length)];
+  used[String(pick.t).toLowerCase()] = true;
+  return Object.assign({ bonus: true }, pick);
+}
+function traceItems(set) {
+  const items = batchInfo(set).items.slice();
+  if (set.kind === 'sound') return items;
+  const used = {};
+  items.forEach(function (it) { used[String(it.t).toLowerCase()] = true; });
+  const out = items.map(function (it) {
+    const recent = wroteWell(it.t) && Date.now() - (writeRec(it.t).at || 0) < 20 * 3600 * 1000;
+    const chance = recent ? 0.85
+      : 0.2 + (String(it.t).length <= 2 ? 0.35 : 0) + (wroteWell(it.t) ? 0.25 : 0);
+    return (Math.random() < chance && trickyPick(used)) || it;
   });
+  if (!used.sylvan && Math.random() < 0.4) {
+    let j = 0;
+    out.forEach(function (it, k) { if (String(it.t).length < String(out[j].t).length) j = k; });
+    out[j] = Object.assign({ bonus: true }, NAME_WORD);
+  }
   return out;
+}
+function stepsFor(it) {
+  if (it.kind === 'sound') return [{ it: it, gs: [it.t], g: 0, ch: it.t, whole: false }];
+  /* a one-letter word keeps its own case: 'I', not 'i'; so does his name's capital */
+  const gs = String(it.t).length === 1 ? [String(it.t)]
+    : it.name ? [it.t[0]].concat(splitWord(it.t.slice(1))) : splitWord(it.t);
+  const out = gs.map(function (g, k) { return { it: it, gs: gs, g: k, ch: g, whole: false }; });
+  if (String(it.t).length > 1) out.push({ it: it, gs: gs, g: gs.length, ch: String(it.t), whole: true });
+  return out;
+}
+function traceSteps(set) {
+  if (!set) return [];
+  return traceItems(set).reduce(function (a, it) { return a.concat(stepsFor(it)); }, []);
+}
+/* His own way out of a word he is fed up with: swap the whole word for a
+   tricky word, a couple of times a session so the book words still get done. */
+const TRACE_SWAPS = 2;
+function swapTraceWord() {
+  const st = TR.steps[TR.i];
+  if (!st || st.it.kind === 'sound' || TR.swaps >= TRACE_SWAPS) return;
+  const used = {};
+  TR.steps.forEach(function (x) { used[String(x.it.t).toLowerCase()] = true; });
+  const pick = trickyPick(used);
+  if (!pick) return;
+  const first = TR.steps.findIndex(function (x) { return x.it === st.it; });
+  let n = 0;
+  while (TR.steps[first + n] && TR.steps[first + n].it === st.it) n++;
+  const fresh = stepsFor(pick);
+  TR.steps.splice.apply(TR.steps, [first, n].concat(fresh));
+  for (let i = first; i < first + n; i++) delete TR.passed[i];
+  /* passed marks after the word shift with it */
+  const moved = {};
+  Object.keys(TR.passed).forEach(function (k) { k = +k; moved[k >= first + n ? k - n + fresh.length : k] = true; });
+  TR.passed = moved;
+  TR.swaps++;
+  TR.i = first;
+  SFX.splat();
+  traceStep();
 }
 /* The voice for an item with no mouth to animate: his grown-up's recording,
    else the free one, else the robot if it is switched on. */
@@ -2776,18 +2930,54 @@ function sayTraceWord() {
   const st = TR.steps[TR.i];
   if (st) sayItem(st.it, st.it.kind === 'sound');
 }
+/* Sometimes the session is a page of his book instead: each word written
+   whole, in order, with the sentence growing underneath. The next page each
+   time, round and round. Long pages stop at 12 words. */
+const PAGE_CHANCE = 0.35, PAGE_MAX_WORDS = 12;
+function pageSession(set) {
+  if (!set || set.kind !== 'word' || Math.random() >= PAGE_CHANCE) return null;
+  const b = bookFor(set.id);
+  if (!b) return null;
+  const at = (S.settings.bookPage || {})[set.id] || 0;
+  for (let n = 0; n < b.pages.length; n++) {
+    const idx = (at + n) % b.pages.length;
+    /* shown as printed (with its full stops), written without the punctuation */
+    const shown = (b.pages[idx].lines || []).join(' ').split(/\s+/)
+      .filter(function (w) { return /[A-Za-z]/.test(w); })
+      .slice(0, PAGE_MAX_WORDS);
+    const words = shown.map(function (w) { return w.replace(/^[^A-Za-z]+|[^A-Za-z'’]+$/g, ''); });
+    if (words.length) return { setId: set.id, idx: idx, words: words, shown: shown, count: b.pages.length };
+  }
+  return null;
+}
+function pageSteps(pg) {
+  return pg.words.map(function (w, wi) {
+    return { it: { t: w, eg: '', kind: 'word', page: true }, gs: [w], g: 0, ch: w, whole: true, wi: wi };
+  });
+}
+function pageHTML(pg, wi) {
+  return pg.shown.map(function (w, k) {
+    return k < wi ? '<span style="opacity:.55">' + esc(w) + '</span>'
+      : k === wi ? '<b>' + esc(w) + '</b>' : '<span style="opacity:.3">' + esc(w) + '</span>';
+  }).join(' ');
+}
 async function openTrace() {
   TR.set = getSet(S.selectedSet);
-  TR.steps = traceSteps(TR.set);
+  TR.page = pageSession(TR.set);
+  TR.steps = TR.page ? pageSteps(TR.page) : traceSteps(TR.set);
   if (!TR.steps.length) {
     TR.steps = ['s', 'a', 't'].map(function (g) { return { it: soundItem(g), gs: [g], g: 0, ch: g, whole: false }; });
   }
   TR.i = 0;
   TR.wrote = 0;
-  document.getElementById('traceTitle').textContent =
-    TR.set && TR.set.kind === 'word' ? 'Write the words' : 'Write the letters';
+  TR.passed = {};
+  TR.swaps = 0;
+  document.getElementById('traceTitle').textContent = TR.page ? 'Write a page of the book'
+    : TR.set && TR.set.kind === 'word' ? 'Write the words' : 'Write the letters';
   show('scTrace');
   try { await document.fonts.load('700 200px Andika'); } catch (e) { /* fallback face */ }
+  /* the page in the grown-up's voice first, then the words one by one */
+  TR.pageVoice = TR.page ? await playPage(TR.page.setId, TR.page.idx) : false;
   traceStep();
 }
 function traceStep() {
@@ -2795,8 +2985,23 @@ function traceStep() {
   if (!st) {
     renderAll();
     show('scHome');
-    toast(TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') +
-      (TR.set ? ' from ' + TR.set.name : '') + '!' : 'Nice writing!');
+    /* finished the whole run (not Finish part way): a sticker if at least half
+       the steps were written, two if every one was */
+    const passed = Object.keys(TR.passed).length, all = TR.steps.length;
+    if (TR.page) {
+      S.settings.bookPage = Object.assign({}, S.settings.bookPage);
+      S.settings.bookPage[TR.page.setId] = (TR.page.idx + 1) % TR.page.count;
+      saveDoc('settings/app', S.settings);
+      lsWrite();
+    }
+    if (passed && passed * 2 >= all) {
+      stickerSheet(awardStickers(passed === all ? 2 : 1, 'write'),
+        TR.page ? 'You wrote a page of your book!'
+          : TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') + '!' : 'Lovely writing!');
+    } else {
+      toast(TR.wrote ? 'You wrote ' + TR.wrote + ' word' + (TR.wrote === 1 ? '' : 's') +
+        (TR.set ? ' from ' + TR.set.name : '') + '!' : 'Nice writing!');
+    }
     return;
   }
   const isWord = st.it.kind !== 'sound';
@@ -2805,23 +3010,28 @@ function traceStep() {
     head.innerHTML = '<span class="tw">' + st.gs.map(function (g, k) {
       return '<span class="' + (st.whole || k < st.g ? 'done' : k === st.g ? 'now' : '') + '">' + esc(g) + '</span>';
     }).join('') + '</span><small>' +
-      esc(st.whole ? 'now write the whole word' : FORM[st.ch] || 'trace the shape') + '</small>';
+      esc(st.whole ? 'now write the whole word' : FORM[st.ch] || FORM[st.ch.toLowerCase()] || 'trace the shape') + '</small>';
   } else {
     head.innerHTML = esc(st.ch) + '<small>' + esc(FORM[st.ch] || 'trace the shape') + '</small>';
   }
-  document.getElementById('traceSent').innerHTML = (isWord && sentenceHTML(st.it)) || '';
+  document.getElementById('traceSent').innerHTML = st.it.page ? pageHTML(TR.page, st.wi)
+    : (isWord && sentenceHTML(st.it)) || '';
 
   const items = TR.steps.map(function (x) { return x.it; }).filter(function (x, k, a) { return a.indexOf(x) === k; });
   let prog = (isWord ? 'Word ' : '') + (items.indexOf(st.it) + 1) + ' of ' + items.length;
   if (isWord) prog += st.whole ? ' · whole word' : ' · letter ' + (st.g + 1) + ' of ' + st.gs.length;
-  if (isWord && TR.set) prog = TR.set.name + ' · ' + prog;
+  if (isWord && TR.set) prog = (st.it.name ? '★ Your name' : st.it.bonus ? '★ Bonus tricky word' : TR.set.name) + ' · ' + prog;
+  if (st.it.page) prog = '📖 Page ' + (TR.page.idx + 1) + ' · word ' + (st.wi + 1) + ' of ' + TR.page.words.length;
   document.getElementById('traceProg').textContent = prog;
+  document.getElementById('traceSwap').hidden = !isWord || !!TR.page || TR.swaps >= TRACE_SWAPS;
   document.getElementById('traceStars').innerHTML = '';
   drawGuide(st.ch);
   clearInk();
   TR.masks = buildMasks(st.ch);
   /* hear the word before he starts on it */
-  if (isWord && st.g === 0) setTimeout(function () { if (TR.steps[TR.i] === st) sayTraceWord(); }, 300);
+  /* (not over the grown-up reading the page at the start) */
+  if (isWord && st.g === 0 && !(TR.i === 0 && TR.pageVoice))
+    setTimeout(function () { if (TR.steps[TR.i] === st) sayTraceWord(); }, 300);
 }
 function glyphFont(ch, size) { return '700 ' + size + 'px Andika, "Comic Sans MS", sans-serif'; }
 /* A whole word has to fit the box, so it shrinks to the width. */
@@ -2962,12 +3172,13 @@ function checkTrace() {
     toast(st.whole ? 'Trace over the dotted word first' : 'Trace over the dotted letter first');
     return;
   }
-  /* a whole word is a lot of small shapes for one finger: ask a little less */
-  const ease = st.whole ? 0.1 : 0;
-  let stars = 0;
-  if (s.coverage >= 0.40 - ease) stars = 1;
-  if (s.coverage >= 0.60 - ease && s.neat >= 0.70 - ease) stars = 2;
-  if (s.coverage >= 0.74 - ease && s.neat >= 0.84 - ease) stars = 3;
+  /* Deliberately generous: a pass (2 stars) is a rough go over about a quarter
+     of the letter that mostly stays near it. A whole word is a lot of small
+     shapes for one finger, so it asks a little less again. */
+  const ease = st.whole ? 0.05 : 0;
+  let stars = 1;
+  if (s.coverage >= 0.25 - ease && s.neat >= 0.40 - ease) stars = 2;
+  if (s.coverage >= 0.50 - ease && s.neat >= 0.65 - ease) stars = 3;
   out.innerHTML = starRow(stars);
   if (stars >= 2) { SFX.win(); splatAt(document.querySelector('.tracebox')); }
   else SFX.nope();
@@ -2977,6 +3188,9 @@ function checkTrace() {
   saveDoc('write/' + key.replace(/[^a-z0-9]/g, '_'), S.write[key]);
   lsWrite();
   if (stars < 2) return;
+  /* Check can be pressed again on the same step; count each step and word once */
+  if (TR.passed[TR.i]) return;
+  TR.passed[TR.i] = true;
   const isWord = st.it.kind !== 'sound';
   const last = isWord && (st.whole || (st.g === st.gs.length - 1 && String(st.it.t).length < 2));
   if (last) TR.wrote++;
@@ -2990,18 +3204,90 @@ function checkTrace() {
 }
 
 /* ==========================================================
-   STICKERS — one per finished session
+   STICKERS — one per finished round (splat or writing), two for a
+   perfect one, and up to three more whenever a grown-up says so
    ========================================================== */
-function awardSticker(acc) {
+function awardStickers(n, from, acc) {
   const list = (S.album.list || []).slice();
-  const n = acc >= 100 ? 2 : 1;
   for (let i = 0; i < n; i++) {
-    list.push({ seed: Math.floor(Math.random() * 99999), at: Date.now(), acc: acc });
+    const s = { seed: Math.floor(Math.random() * 99999), at: Date.now(), from: from };
+    if (acc != null) s.acc = acc;
+    list.push(s);
   }
   S.album = { list: list.slice(-240) };
   saveDoc('stickers/album', S.album);
   lsWrite();
+  renderHome();
   return list.slice(-n);
+}
+/* The child's payoff for anything that is not the splat round, which has its
+   own well-done screen. */
+function stickerSheet(won, title) {
+  const s = makeSheet();
+  const h = document.createElement('h3');
+  h.textContent = title;
+  h.style.textAlign = 'center';
+  const cast = document.createElement('div');
+  cast.className = 'cast';
+  cast.style.height = '120px';
+  cast.innerHTML = won.map(function (x) { return monsterSVG(x.seed, '', MCOL[x.seed % MCOL.length]); }).join('');
+  const line = document.createElement('p');
+  line.style.cssText = 'margin:0;text-align:center;font-size:15px;font-weight:600';
+  line.textContent = won.length + ' new sticker' + (won.length > 1 ? 's' : '');
+  s.body.appendChild(h); s.body.appendChild(cast); s.body.appendChild(line);
+  SFX.win();
+  setTimeout(function () { gooBurst(cast); }, 120);
+}
+/* Grown-up gift: a sum a four-year-old can't do stands in for a lock. */
+function giftSum() {
+  if (Math.random() < 0.5) {
+    const a = 3 + Math.floor(Math.random() * 7), b = 3 + Math.floor(Math.random() * 7);
+    return { text: a + ' × ' + b, answer: a * b };
+  }
+  const a = 14 + Math.floor(Math.random() * 25), b = 17 + Math.floor(Math.random() * 25);
+  return { text: a + ' + ' + b, answer: a + b };
+}
+function giftSheet() {
+  const s = makeSheet();
+  let sum = giftSum();
+  const h = document.createElement('h3');
+  h.textContent = 'Give extra stickers';
+  const p = document.createElement('p');
+  p.className = 'note';
+  p.style.margin = '0';
+  p.textContent = 'Grown-ups: answer the sum, then pick how many.';
+  const q = document.createElement('div');
+  q.className = 'bigword';
+  q.textContent = sum.text + ' = ?';
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.inputMode = 'numeric';
+  inp.autocomplete = 'off';
+  inp.placeholder = 'Answer';
+  inp.style.cssText = 'font-size:22px;text-align:center';
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.style.justifyContent = 'center';
+  [1, 2, 3].forEach(function (n) {
+    const b = document.createElement('button');
+    b.className = 'btn go';
+    b.textContent = '+' + n + ' ★';
+    b.addEventListener('click', function () {
+      if (parseInt(inp.value.trim(), 10) !== sum.answer) {
+        SFX.nope();
+        toast(inp.value.trim() ? 'Not quite — here’s another' : 'Answer the sum first');
+        if (inp.value.trim()) { sum = giftSum(); q.textContent = sum.text + ' = ?'; }
+        inp.value = '';
+        inp.focus();
+        return;
+      }
+      s.close();
+      stickerSheet(awardStickers(n, 'gift'), n === 1 ? 'A sticker for you!' : n + ' stickers for you!');
+    });
+    row.appendChild(b);
+  });
+  s.body.appendChild(h); s.body.appendChild(p); s.body.appendChild(q);
+  s.body.appendChild(inp); s.body.appendChild(row);
 }
 function renderAlbum() {
   const grid = document.getElementById('albumGrid');
@@ -3017,7 +3303,9 @@ function renderAlbum() {
     grid.appendChild(b);
   });
   document.getElementById('albumNote').textContent = list.length
-    ? 'One sticker for every finished round — two if he got them all first time.'
+    ? 'One sticker for every finished round — two if he got them all first time. ' +
+      'Writing: one for finishing with at least half written, two for writing every one. ' +
+      'Grown-ups can give extra with the ★ button at the top.'
     : 'Finish a round to win your first sticker.';
 }
 
@@ -3039,7 +3327,7 @@ function miniMonster(text, idx, onPick) {
   return b;
 }
 function miniWin(acc, line) {
-  const won = awardSticker(acc);
+  const won = awardStickers(acc >= 100 ? 2 : 1, 'mini', acc);
   document.getElementById('mwTitle').textContent = acc >= 100 ? 'All first time!' : 'You did it!';
   document.getElementById('mwSticker').innerHTML = won.map(function (s) {
     return monsterSVG(s.seed, '', MCOL[s.seed % MCOL.length]);
@@ -3679,7 +3967,7 @@ function drawLine() {
     b.addEventListener('click', async function () {
       const item = { t: bare, eg: '', kind: 'word' };
       const own = await ownRecording(item);
-      if (own && own.type === 'audio') { playOwn(own.url); return; }
+      if (own) { playOwn(own.url); return; }   /* a video's sound plays too */
       const lib = libWordFor(item);
       if (lib) playSprite(lib);
       else robot(bare, .75);
@@ -4166,6 +4454,107 @@ async function saveBook(title, pages, chosen) {
   toast(items.length + ' words and ' + saved.length + ' pages saved');
 }
 
+/* ---------- the grown-up reading each page aloud ---------- */
+/* One recording per page, kept on this phone. It plays on the Read the book
+   screen and before he writes that page. */
+function bookFor(setId) {
+  const b = S.books[setId];
+  return b && b.pages && b.pages.some(function (pg) { return (pg.lines || []).join(' ').trim(); }) ? b : null;
+}
+function pageKeyFor(setId, i) { return 'pr:' + setId + ':' + i; }
+async function playPage(setId, i) {
+  const b = S.books[setId];
+  if (!b || !b.pages[i] || !b.pages[i].read) return false;
+  const blob = await idbGet(pageKeyFor(setId, i));
+  if (!blob) return false;
+  playOwn(URL.createObjectURL(blob));
+  return true;
+}
+function unreadPages(setId) {
+  const b = bookFor(setId);
+  return b ? b.pages.filter(function (pg) { return (pg.lines || []).length && !pg.read; }).length : 0;
+}
+function readBookSheet(setId) {
+  const b = bookFor(setId);
+  if (!b) { toast('Add this week’s book first'); return; }
+  const s = makeSheet();
+  let rec = null, stream = null;
+  function stopAll() {
+    if (rec && rec.state === 'recording') rec.stop();
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    stream = null;
+  }
+  const close = s.close;
+  /* closing the sheet any way must not leave the microphone on */
+  s.body.parentNode.addEventListener('click', function (e) { if (e.target === s.body.parentNode) stopAll(); });
+  setTimeout(function () {
+    const c = s.body.querySelector('.btn.ghost');
+    if (c) c.addEventListener('click', stopAll);
+  }, 0);
+  const h = document.createElement('h3');
+  h.textContent = 'Read “' + (b.title || 'the book') + '” aloud';
+  const p = document.createElement('p');
+  p.className = 'note'; p.style.margin = '0';
+  p.textContent = 'Tap 🎙, read the page in your normal reading voice, tap ■ when you finish. ' +
+    'He hears it on the Read the book screen and before he writes that page.';
+  s.body.appendChild(h); s.body.appendChild(p);
+  b.pages.forEach(function (pg, i) {
+    const text = (pg.lines || []).join(' ');
+    if (!text) return;
+    const row = document.createElement('div');
+    row.className = 'wtile';
+    row.style.gridTemplateColumns = '1fr auto auto';
+    const lab = document.createElement('span');
+    lab.className = 'lab'; lab.style.cssText = 'font-size:15px;font-family:var(--letter)';
+    lab.innerHTML = '<small>Page ' + (i + 1) + (pg.read ? ' · ✓ read' : '') + '</small><br>' + esc(text);
+    const play = document.createElement('button');
+    play.className = 'mini'; play.textContent = '▶'; play.hidden = !pg.read;
+    play.setAttribute('aria-label', 'Hear page ' + (i + 1));
+    play.addEventListener('click', function () { playPage(setId, i); });
+    const btn = document.createElement('button');
+    btn.className = 'mini'; btn.textContent = '🎙';
+    btn.setAttribute('aria-label', 'Record page ' + (i + 1));
+    btn.addEventListener('click', async function () {
+      if (rec && rec.state === 'recording') {
+        if (btn.dataset.live) rec.stop();
+        return;
+      }
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+      catch (e) { toast('No microphone access'); return; }
+      const mime = pickMime('mic');
+      try { rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined); }
+      catch (e) { stopAll(); toast('Recording isn’t supported here'); return; }
+      const chunks = [];
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = async function () {
+        clearTimeout(cap);
+        btn.textContent = '🎙'; delete btn.dataset.live; btn.classList.remove('live');
+        if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+        stream = null;
+        if (!chunks.length) return;
+        const blob = new Blob(chunks, { type: rec.mimeType || mime || 'audio/webm' });
+        if (!(await idbPut(pageKeyFor(setId, i), blob))) { toast('Could not save page ' + (i + 1)); return; }
+        pg.read = true;
+        saveDoc('books/' + setId, b);
+        lsWrite();
+        lab.querySelector('small').textContent = 'Page ' + (i + 1) + ' · ✓ read';
+        play.hidden = false;
+        toast('Page ' + (i + 1) + ' saved');
+        renderGrown();
+      };
+      rec.start();
+      btn.textContent = '■'; btn.dataset.live = '1'; btn.classList.add('live');
+      const cap = setTimeout(function () { if (rec && rec.state === 'recording') rec.stop(); }, 90000);
+    });
+    row.appendChild(lab); row.appendChild(play); row.appendChild(btn);
+    s.body.appendChild(row);
+  });
+  const done = document.createElement('button');
+  done.className = 'btn go'; done.textContent = 'Done';
+  done.addEventListener('click', function () { stopAll(); close(); });
+  s.body.appendChild(done);
+}
+
 /* ---------- reading the real pages ---------- */
 const BK = { id: null, i: 0 };
 function openBook(setId) {
@@ -4216,13 +4605,14 @@ function drawPage() {
       btn.addEventListener('click', async function () {
         const item = { t: bare, eg: '', kind: 'word' };
         const own = await ownRecording(item);
-        if (own && own.type === 'audio') { playOwn(own.url); return; }
+        if (own) { playOwn(own.url); return; }   /* a video's sound plays too */
         const lib = libWordFor(item);
         if (lib) playSprite(lib); else robot(bare, .75);
       });
       host.appendChild(btn);
     });
   }
+  document.getElementById('bookHear').hidden = !pg.read;
   document.getElementById('bookPrev').disabled = BK.i === 0;
   document.getElementById('bookNext').textContent =
     BK.i >= b.pages.length - 1 ? 'All done ★' : 'Next page ▸';
@@ -4478,6 +4868,7 @@ document.getElementById('startBtn').addEventListener('click', function () {
   unlockAudio();
   startGame(S.selectedSet);
 });
+document.getElementById('navGift').addEventListener('click', giftSheet);
 document.getElementById('navStop').addEventListener('click', function () {
   G.q = null;
   if (window.speechSynthesis) speechSynthesis.cancel();
@@ -4525,6 +4916,7 @@ document.getElementById('photoPick').addEventListener('click', photographBook);
 document.getElementById('bookBtn').addEventListener('click', function () { openBook(S.selectedSet); });
 document.getElementById('bookNext').addEventListener('click', function () { bookStep(1); });
 document.getElementById('bookPrev').addEventListener('click', function () { bookStep(-1); });
+document.getElementById('bookHear').addEventListener('click', function () { playPage(BK.id, BK.i); });
 document.getElementById('bookDone').addEventListener('click', function () { show('scHome'); });
 document.getElementById('traceBtn').addEventListener('click', openTrace);
 document.getElementById('albumBtn').addEventListener('click', function () {
@@ -4566,6 +4958,7 @@ document.getElementById('clPic').addEventListener('click', function () {
 document.getElementById('mwHome').addEventListener('click', function () { renderHome(); show('scHome'); });
 document.getElementById('traceClear').addEventListener('click', clearInk);
 document.getElementById('traceCheck').addEventListener('click', checkTrace);
+document.getElementById('traceSwap').addEventListener('click', swapTraceWord);
 document.getElementById('traceNext').addEventListener('click', function () { TR.i++; traceStep(); });
 document.getElementById('traceWord').addEventListener('click', sayTraceWord);
 document.getElementById('traceDone').addEventListener('click', function () {
@@ -4575,6 +4968,13 @@ document.getElementById('traceDone').addEventListener('click', function () {
 setupTraceCanvas();
 document.getElementById('hearBtn').addEventListener('click', hearPrompt);
 document.getElementById('recAll').addEventListener('click', function () { startRecorder(mediaTab); });
+document.getElementById('freqRec').addEventListener('click', recordFrequent);
+document.getElementById('readBook').addEventListener('click', function () { readBookSheet(S.selectedSet); });
+document.getElementById('revRead').addEventListener('click', function () { readBookSheet(S.selectedSet); });
+document.getElementById('revFreq').addEventListener('click', async function () {
+  await commitGrades();
+  recordFrequent();
+});
 document.getElementById('showCredits').addEventListener('click', creditsSheet);
 document.getElementById('stretchBtn').addEventListener('click', function () {
   if (actx && actx.state === 'suspended') actx.resume();
@@ -4633,6 +5033,21 @@ document.getElementById('bkSave').addEventListener('click', function () {
     });
   }
   const id = editingSet || ('u_' + Date.now().toString(36));
+  /* Typed sentences also become the book's pages (a blank line starts a new
+     page; with none, two sentences a page), so he can read them and write a
+     page of the book without any photos. A photographed book is left alone. */
+  if (lines.length && (!S.books[id] || S.books[id].typed)) {
+    const chunks = raw.split(/\n\s*\n/).map(linesFrom).filter(function (l) { return l.length; });
+    let pages = chunks.length > 1 ? chunks : [];
+    if (!pages.length && chunks.length) {
+      for (let i = 0; i < chunks[0].length; i += 2) pages.push(chunks[0].slice(i, i + 2));
+    }
+    if (pages.length) {
+      S.books[id] = { pages: pages.map(function (l) { return { pageKey: null, lines: l }; }),
+                      title: name, at: Date.now(), typed: true };
+      saveDoc('books/' + id, S.books[id]);
+    }
+  }
   S.sets[id] = { name: name, kind: 'word', items: words, phase: 'Reading book',
                  createdAt: (S.sets[id] && S.sets[id].createdAt) || Date.now() };
   saveDoc('sets/' + id, S.sets[id]).then(function () {
