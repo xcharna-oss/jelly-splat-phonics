@@ -617,6 +617,7 @@
   .bigbtn.round { width: 66px; height: 66px; padding: 0; font-size: 30px; }
   .bigbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--edge); }
   #scClap .picture { width: 170px; height: 170px; font-size: 108px; border-radius: 36px; }
+  #scClap .picture.wordpic { width: auto; min-width: 170px; padding: 0 24px; font-size: 56px; font-weight: 800; }
   .beats { display: flex; flex-wrap: wrap; gap: 10px; min-height: 48px; align-items: center; justify-content: center; }
   .beats i {
     width: 34px; height: 34px; border-radius: 50%; background: var(--c4);
@@ -3214,7 +3215,7 @@ function awardStickers(n, from, acc) {
     if (acc != null) s.acc = acc;
     list.push(s);
   }
-  S.album = { list: list.slice(-240) };
+  S.album = { list: list.slice(-5000) };
   saveDoc('stickers/album', S.album);
   lsWrite();
   renderHome();
@@ -3640,11 +3641,73 @@ const CLAP_WORDS = ('🐱 cat,🐶 dog,🚗 car,🔑 key,🐄 cow,☀️ sun,�
     const b = x.split(' ');
     return { e: b[0], s: b[1].split('-'), w: b[1].replace(/-/g, '') };
   });
+const CLAP_BY_WORD = {};
+CLAP_WORDS.forEach(function (c) { CLAP_BY_WORD[c.w] = c; });
+/* Beats for a word that is not in the list above: one per vowel group, a
+   silent final e dropped ("make", but not "apple"). Split before a single
+   consonant (ti-ger) and inside a pair (rab-bit); ck and ng stay with the
+   first beat, ch sh th ph wh with the second. */
+function clapBeats(w) {
+  const s = w.toLowerCase(), g = [], re = /[aeiouy]+/g;
+  let m;
+  while ((m = re.exec(s))) g.push([m.index, m.index + m[0].length]);
+  if (g.length && g[0][0] === 0 && s[0] === 'y' && g[0][1] === 1) g.shift();
+  const last = g[g.length - 1];
+  if (g.length > 1 && last[0] === s.length - 1 && s.slice(-1) === 'e' &&
+      !(/[^aeiouy]le$/.test(s))) g.pop();
+  if (g.length < 2) return [w];
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < g.length - 1; i++) {
+    const a = g[i][1], b = g[i + 1][0], cons = s.slice(a, b);
+    let cut = cons.length <= 1 ? a : a + 1;
+    if (cons.length === 2 && (cons === 'ck' || cons === 'ng')) cut = b;
+    else if (cons.length >= 2 && /^(ch|sh|th|ph|wh)/.test(cons)) cut = a;
+    parts.push(w.slice(start, cut));
+    start = cut;
+  }
+  parts.push(w.slice(start));
+  return parts;
+}
+/* The words a grown-up has recorded, so he hears their voice clapping along. */
+function ownClapWords() {
+  const seen = {}, out = [];
+  [S.voice, S.localVoice, S.media, S.localMedia].forEach(function (store) {
+    Object.keys(store).forEach(function (k) {
+      if (k.indexOf('word-') !== 0) return;
+      const body = store[k] && typeof store[k] === 'object' ? store[k] : {};
+      let t = body.text || k.slice(5);
+      if (!/^[A-Za-z]+$/.test(t)) return;
+      if (t.toLowerCase() === NAME_WORD.t.toLowerCase()) t = NAME_WORD.t;
+      const low = t.toLowerCase();
+      if (seen[low]) return;
+      seen[low] = true;
+      out.push(CLAP_BY_WORD[low] || { e: '', s: clapBeats(t), w: t });
+    });
+  });
+  return out;
+}
 const CL = { list: [], i: 0, taps: 0, tries: 0, firstTry: 0, busy: false, timer: null };
 function startClap() {
-  const by = function (n) { return shuffle(CLAP_WORDS.filter(function (c) { return c.s.length === n; })); };
-  /* mostly long words: those are the ones that lose a beat */
-  CL.list = shuffle(by(1).slice(0, 2).concat(by(2).slice(0, 2), by(3).slice(0, 4)));
+  const CLAP_N = 8;
+  const pick = function (pool, n) { return shuffle(pool.filter(function (c) { return c.s.length === n; })); };
+  /* Words in a grown-up's own voice first, mostly longer ones: those are the
+     ones that lose a beat. Picture words fill any gap. */
+  const own = ownClapWords();
+  const ownLong = shuffle(own.filter(function (c) { return c.s.length > 1; }));
+  const ownShort = shuffle(own.filter(function (c) { return c.s.length === 1; }));
+  let list = ownLong.slice(0, 5);
+  list = list.concat(ownShort.slice(0, CLAP_N - list.length));
+  list = list.concat(ownLong.slice(5, 5 + CLAP_N - list.length));
+  if (list.length < CLAP_N) {
+    const have = {};
+    list.forEach(function (c) { have[c.w.toLowerCase()] = true; });
+    const rest = function (c) { return !have[c.w]; };
+    const fill = shuffle(pick(CLAP_WORDS, 1).filter(rest).slice(0, 2)
+      .concat(pick(CLAP_WORDS, 2).filter(rest).slice(0, 2), pick(CLAP_WORDS, 3).filter(rest).slice(0, 4)));
+    list = list.concat(fill.slice(0, CLAP_N - list.length));
+  }
+  CL.list = shuffle(list);
   CL.i = 0; CL.firstTry = 0;
   MINI.last = 'clap';
   show('scClap');
@@ -3664,7 +3727,8 @@ function clapStep() {
     pips.appendChild(p);
   });
   const pic = document.getElementById('clPic');
-  pic.textContent = c.e;
+  pic.textContent = c.e || c.w;
+  pic.classList.toggle('wordpic', !c.e);
   pic.setAttribute('aria-label', c.w + ' — hear it');
   document.getElementById('clCue').innerHTML = 'Grown-up, say it slowly: <b>' + esc(c.w) + '</b>';
   clapReady('👏 Clap it!');
