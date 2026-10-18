@@ -1587,6 +1587,9 @@ async function present(box, ref, it, opts) {
   const graphemes = it.kind === 'sound' ? [it.t] : splitWord(it.t);
 
   if (own && own.type === 'video') {
+    /* The video replaces the mouth, so the next word must build a new one. */
+    if (ref.m) ref.m.stop();
+    ref.m = null;
     box.innerHTML = '<span class="tag">Your video</span><video playsinline preload="auto" src="' + own.url + '"></video>';
     const v = box.querySelector('video');
     v.currentTime = 0;
@@ -4643,9 +4646,13 @@ function drawPage() {
   });
   const img = document.getElementById('bookPage');
   const frame = document.querySelector('.pagewrap');
+  /* each page photo is a full-size blob: let the last one go */
+  if (img.src && img.src.indexOf('blob:') === 0) URL.revokeObjectURL(img.src);
   if (pg.pageKey) {
     frame.hidden = false;
+    const want = BK.id + ':' + BK.i;
     idbGet(pg.pageKey).then(function (blob) {
+      if (want !== BK.id + ':' + BK.i) return;   /* turned the page meanwhile */
       if (blob) { img.src = URL.createObjectURL(blob); img.hidden = false; }
       else { frame.hidden = true; }
     });

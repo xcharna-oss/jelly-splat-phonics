@@ -1,13 +1,20 @@
 /* Offline cache. Bump CACHE when you change any file, so phones pick it up. */
-const CACHE = 'jelly-splat-v11';
+const CACHE = 'jelly-splat-v12';
 const CORE = ['./', './index.html', './voices.mp3', './manifest.json',
               './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(CACHE)
-      .then(function (c) { return c.addAll(CORE); })
-      .catch(function () { /* a missing file must not block install */ })
+      .then(function (c) {
+        /* 'reload' skips the browser's HTTP cache, which could otherwise hand
+           back the previous index.html straight after a version bump. One file
+           failing must not leave the new cache empty, so add them one by one. */
+        return Promise.all(CORE.map(function (u) {
+          return c.add(new Request(u, { cache: 'reload' })).catch(function () { /* missing: skip */ });
+        }));
+      })
+      .catch(function () { /* no cache storage: still install */ })
       .then(function () { return self.skipWaiting(); })
   );
 });
@@ -30,17 +37,18 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then(function (hit) {
+    /* This app's own cache only: caches.match() searches every cache on the
+       site, so the other app's stale copy of a shared URL could win. */
+    caches.open(CACHE).then(function (c) { return c.match(e.request); }).catch(function () { return null; }).then(function (hit) {
       if (hit) return hit;
       return fetch(e.request).then(function (res) {
         if (res && res.status === 200) {
           const copy = res.clone();
-          caches.open(CACHE).then(function (c) {
-            try { c.put(e.request, copy); } catch (err) { /* opaque or too big */ }
-          });
+          caches.open(CACHE).then(function (c) { return c.put(e.request, copy); })
+            .catch(function () { /* full, or not cacheable */ });
         }
         return res;
-      }).catch(function () { return hit; });
+      }).catch(function () { return Response.error(); });   /* offline, never cached */
     })
   );
 });

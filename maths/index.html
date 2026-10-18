@@ -799,7 +799,7 @@ function openMunch() {
     }
     return { v: v, show: show, a: a, b: b, eaten: false };
   });
-  MU.me = 0; MU.path = []; MU.ghost = -1;
+  MU.me = 0; MU.path = []; MU.ghost = -1; MU.boo = false;
   drawBoard();
   show('scMunch');
   document.getElementById('munchSay').textContent = 'Munch the';
@@ -868,7 +868,7 @@ function pathTo(from, to) {
   return out;
 }
 function walkTo(i) {
-  if (!on('scMunch')) return;
+  if (!on('scMunch') || MU.boo) return;   /* not while the ghost's "Boo!" plays */
   if (i === MU.me && !MU.walking) return munch();
   MU.path = pathTo(MU.me, i);
   if (!MU.walking) step();
@@ -946,6 +946,7 @@ function ghostStep(stepMs) {
 function caught() {
   clearTimeout(MU.walking); MU.walking = null; MU.path = [];
   clearTimeout(MU.ghostTimer);
+  MU.boo = true;
   const gh = document.getElementById('ghost');
   gh.classList.remove('boo'); void gh.offsetWidth; gh.classList.add('boo');
   SFX.boo();
@@ -953,6 +954,7 @@ function caught() {
   /* Nothing is lost: the jelly just hops home, and the ghost floats back to
      its corner and has a little sleep. */
   setTimeout(function () {
+    MU.boo = false;
     if (!on('scMunch')) return;
     const free = MU.tiles.map(function (_, i) { return i; }).filter(function (i) { return i !== MU.ghost; });
     free.sort(function (a, b) { return dist(b, MU.ghost) - dist(a, MU.ghost); });
@@ -1056,16 +1058,25 @@ document.getElementById('winHome').addEventListener('click', function () { rende
 /* Hold to open the grown-up side; leaving it is a normal tap. */
 (function () {
   const btn = document.getElementById('navGrown');
-  let timer = null;
+  let timer = null, held = false;
   btn.addEventListener('pointerdown', function () {
     if (current === 'scGrown') return;
-    timer = setTimeout(function () { timer = null; openGrown(); }, 700);
+    held = false;
+    timer = setTimeout(function () { timer = null; held = true; openGrown(); }, 700);
   });
   const cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
-  btn.addEventListener('pointerup', cancel);
+  btn.addEventListener('pointerup', function () {
+    cancel();
+    /* some phones send no click after a long press: don't eat the next tap */
+    if (held) setTimeout(function () { held = false; }, 400);
+  });
   btn.addEventListener('pointerleave', cancel);
   btn.addEventListener('pointercancel', cancel);
-  btn.addEventListener('click', function () { if (current === 'scGrown') { renderHome(); show('scHome'); } });
+  btn.addEventListener('click', function () {
+    /* the click ending the hold that just opened it is not a "Done" tap */
+    if (held) { held = false; return; }
+    if (current === 'scGrown') { renderHome(); show('scHome'); }
+  });
 })();
 document.getElementById('grownDone').addEventListener('click', function () { renderHome(); show('scHome'); });
 bindSetting('optVoice', 'voice', function (el) { return el.checked; });
